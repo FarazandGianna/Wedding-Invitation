@@ -163,10 +163,10 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           <div
             className="absolute left-1/2 rounded-[2px]"
             style={{
-              width: '70%',
-              height: '160%',
+              width: '68%',
+              height: '175%',
               bottom: '3%',
-              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '6%' : '45%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
+              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '2%' : '47%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
               transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
               pointerEvents: onCard ? 'auto' : 'none',
               cursor: onCard ? 'pointer' : 'default'
@@ -321,7 +321,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               <path d="M50 6 C 52 3, 54 3, 56 6 C 54 9, 52 9, 50 6" strokeWidth="0.6" />
               <path d="M64 6 C 66 3, 68 3, 70 6 C 68 9, 66 9, 64 6" strokeWidth="0.6" />
             </svg>
-            <p className="text-[11px] uppercase tracking-widest2 text-clay">
+            <p className="text-sm font-serif uppercase tracking-widest2 text-clay sm:text-base">
               You are cordially invited
             </p>
             {/* Bottom flourish (mirror) */}
