@@ -5,19 +5,16 @@ interface Props {
   events: WeddingEvent[]
 }
 
+/**
+ * Itinerary content — designed to be rendered inside a Modal.
+ * Renders the timeline of Pakistan events.
+ */
 export default function Itinerary({ events }: Props) {
   if (events.length === 0) return null
 
   return (
-    <section id="itinerary" className="mx-auto max-w-2xl px-6 py-20 text-center sm:py-28">
-      <p className="text-xs uppercase tracking-widest2 text-clay">Pakistan Itinerary</p>
-      <h2 className="mt-4 font-serif text-3xl text-ink">Celebration Schedule</h2>
-      <p className="mt-3 text-sm text-ink/60">
-        Every event we are holding in Pakistan, in order.
-      </p>
-
-      {/* Timeline */}
-      <div className="relative mt-12 text-left">
+    <div className="text-left">
+      <div className="relative">
         {/* Vertical line */}
         <div
           className="absolute left-[19px] top-2 bottom-2 w-px bg-line/40"
@@ -84,6 +81,6 @@ export default function Itinerary({ events }: Props) {
           ))}
         </ol>
       </div>
-    </section>
+    </div>
   )
 }

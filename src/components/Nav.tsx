@@ -3,11 +3,20 @@ interface NavItem {
   targetId: string
 }
 
-export default function Nav({ items }: { items: NavItem[] }) {
+interface Props {
+  items: NavItem[]
+  onNavigate?: (targetId: string) => void
+}
+
+export default function Nav({ items, onNavigate }: Props) {
   if (items.length === 0) return null
 
-  function scrollTo(targetId: string) {
-    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  function handleNavigate(targetId: string) {
+    if (onNavigate) {
+      onNavigate(targetId)
+    } else {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   return (
@@ -24,7 +33,7 @@ export default function Nav({ items }: { items: NavItem[] }) {
           <button
             key={item.targetId}
             type="button"
-            onClick={() => scrollTo(item.targetId)}
+            onClick={() => handleNavigate(item.targetId)}
             className="whitespace-nowrap py-1 text-[11px] uppercase tracking-widest2 text-clay transition-colors hover:text-ink"
           >
             {item.label}

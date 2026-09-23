@@ -20,6 +20,9 @@ export default {
       },
       letterSpacing: {
         widest2: '0.28em'
+      },
+      transitionDuration: {
+        '400': '400ms'
       }
     }
   },
