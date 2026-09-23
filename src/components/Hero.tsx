@@ -7,7 +7,7 @@ export default function Hero({ invitation }: { invitation: Invitation }) {
     <section id="invitation" className="flex min-h-[92vh] flex-col items-center justify-center px-6 text-center">
       {/* Watermark: the FG mark echoes the envelope card behind the hero. */}
       <FgMonogram
-        className="animate-fade-up h-28 w-auto text-gold sm:h-32"
+        className="animate-fade-up h-28 w-auto sm:h-32"
       />
       <p className="animate-fade-up mt-4 text-xs uppercase tracking-widest2 text-clay" style={{ animationDelay: '80ms' }}>
         {invitation.invitation_title || 'Together with our families'}

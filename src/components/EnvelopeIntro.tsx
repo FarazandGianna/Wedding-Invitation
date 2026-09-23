@@ -281,7 +281,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
                 transition: 'opacity 1000ms ease 400ms'
               }}
             >
-              <FgMonogram halo="#ead9bf" className="h-14 w-auto text-[#3c0d18] sm:h-16" />
+              <FgMonogram halo="#ead9bf" className="h-16 w-auto sm:h-20" />
               <p className="mt-3 text-[9px] uppercase tracking-widest2 text-[#7a5c39] sm:text-[10px]">
                 The wedding of
               </p>
@@ -371,7 +371,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           }}
         >
           <div className="envelope-breathe rounded-full" style={{ padding: 10, background: 'radial-gradient(circle, rgba(201,168,119,0.12) 0%, transparent 70%)' }}>
-            <FgMonogram className="h-12 w-auto text-gold sm:h-14" />
+            <FgMonogram className="h-12 w-auto sm:h-14" />
           </div>
         </div>
       </div>

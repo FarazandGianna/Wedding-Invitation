@@ -51,7 +51,7 @@ export default function Footer({ invitation }: { invitation: Invitation }) {
 
   return (
     <footer id="footer" className="border-t border-line/70 px-6 py-14 text-center">
-      <FgMonogram className="mx-auto h-16 w-auto text-gold" />
+      <FgMonogram className="mx-auto h-16 w-auto" />
       <p className="mt-4 font-display italic text-lg text-ink/70">
         {invitation.bride_name} &amp; {invitation.groom_name}
       </p>

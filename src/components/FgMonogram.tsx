@@ -1,34 +1,28 @@
-import type { CSSProperties } from 'react'
-import { MONOGRAM_FRAME, MONOGRAM_LETTERS, MONOGRAM_VIEWBOX } from './monogramData'
-
 interface Props {
   className?: string
   /**
-   * Page color sitting behind the mark — paints the halo that makes the G
-   * read as woven over the F. Defaults to the site's wine background.
-   * Pass the card/paper color when the mark sits on a light surface.
+   * Unused — kept for API compatibility with existing call sites.
+   * The monogram PNG has its own gold coloring baked in.
    */
   halo?: string
 }
 
 /**
- * The ONE canonical Faraz & Gianna (FG) monogram, shared by every brand
- * surface: envelope seal, invitation card, hero, footer, opening experience.
- * Letterforms are real Cormorant Garamond outlines baked into monogramData.ts
- * (the same data that generates favicon.svg and the PNG icons), so the mark
- * is pixel-identical everywhere and never depends on installed fonts.
+ * The canonical Faraz & Gianna (FG) monogram — an ornate Baroque oval
+ * cartouche with interlocked serif initials in champagne gold.
+ *
+ * Rendered from a single transparent PNG (public/monogram.png) so the
+ * exact artwork the couple approved is pixel-identical everywhere:
+ * envelope seal, invitation card, hero watermark, footer, favicon.
  */
-export default function FgMonogram({ className, halo }: Props) {
-  const style = halo ? ({ '--monogram-halo': halo } as CSSProperties) : undefined
+export default function FgMonogram({ className, halo: _halo }: Props) {
   return (
-    <svg
-      viewBox={`0 0 ${MONOGRAM_VIEWBOX.w} ${MONOGRAM_VIEWBOX.h}`}
+    <img
+      src="/monogram.png"
+      alt=""
       className={className}
-      style={style}
-      xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      focusable="false"
-      dangerouslySetInnerHTML={{ __html: MONOGRAM_FRAME + MONOGRAM_LETTERS }}
+      draggable={false}
     />
   )
 }
