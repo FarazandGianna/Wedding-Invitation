@@ -7,7 +7,9 @@ import EventDetails from '../components/EventDetails'
 import Footer from '../components/Footer'
 import Gallery from '../components/Gallery'
 import Hero from '../components/Hero'
+import Itinerary from '../components/Itinerary'
 import Nav from '../components/Nav'
+import Registry from '../components/Registry'
 import RSVPForm from '../components/RSVPForm'
 import Venue from '../components/Venue'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
@@ -67,7 +69,9 @@ export default function InvitationPage() {
         isSectionEnabled(state.sections, 'details') && { label: 'Details', targetId: 'details' },
         isSectionEnabled(state.sections, 'venue') && { label: 'Location', targetId: 'location' },
         isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', targetId: 'gallery' },
-        isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', targetId: 'rsvp' }
+        isSectionEnabled(state.sections, 'itinerary') && state.events.length > 0 && { label: 'Itinerary', targetId: 'itinerary' },
+        isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', targetId: 'rsvp' },
+        isSectionEnabled(state.sections, 'registry') && state.registry.length > 0 && { label: 'Registry', targetId: 'registry' }
       ].filter((x): x is { label: string; targetId: string } => Boolean(x))
     : []
 
@@ -88,12 +92,26 @@ export default function InvitationPage() {
         >
           <Nav items={navItems} />
           <Hero invitation={state.invitation} />
+          {/* Itinerary CTA button: shown when itinerary section is enabled and events exist */}
+          {isSectionEnabled(state.sections, 'itinerary') && state.events.length > 0 && (
+            <div className="flex justify-center px-6 pb-4">
+              <button
+                type="button"
+                onClick={() => document.getElementById('itinerary')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="animate-fade-up min-h-12 border border-gold bg-gold/10 px-10 py-3.5 text-xs uppercase tracking-widest2 text-gold transition-colors hover:bg-gold hover:text-paper"
+              >
+                View Pakistan Itinerary
+              </button>
+            </div>
+          )}
           {isSectionEnabled(state.sections, 'message') && <CoupleMessage invitation={state.invitation} />}
           {isSectionEnabled(state.sections, 'countdown') && <Countdown invitation={state.invitation} />}
           {isSectionEnabled(state.sections, 'details') && <EventDetails invitation={state.invitation} />}
           {isSectionEnabled(state.sections, 'venue') && <Venue invitation={state.invitation} />}
           {isSectionEnabled(state.sections, 'gallery') && <Gallery items={state.gallery} />}
+          {isSectionEnabled(state.sections, 'itinerary') && state.events.length > 0 && <Itinerary events={state.events} />}
           {isSectionEnabled(state.sections, 'rsvp') && <RSVPForm invitation={state.invitation} />}
+          {isSectionEnabled(state.sections, 'registry') && state.registry.length > 0 && <Registry items={state.registry} />}
           <Footer invitation={state.invitation} />
         </div>
       )}

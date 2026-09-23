@@ -6,7 +6,9 @@ export type SectionKey =
   | 'details'
   | 'venue'
   | 'gallery'
+  | 'itinerary'
   | 'rsvp'
+  | 'registry'
   | 'contact'
   | 'footer'
 
@@ -55,6 +57,7 @@ export interface AdminRsvpRow {
   phone: string | null
   attendance_status: 'attending' | 'not_attending'
   guest_count: number | null
+  coming_from: string | null
   message: string | null
   submitted_at: string
   updated_at: string
@@ -75,5 +78,56 @@ export interface RsvpSubmission {
   phone: string
   attendance_status: AttendanceStatus
   guest_count: number | null
+  coming_from: string | null
   message: string
+}
+
+export interface WeddingEvent {
+  id: string
+  invitation_id: string
+  title: string
+  description: string | null
+  event_date: string | null // YYYY-MM-DD
+  event_time: string | null // HH:MM:SS
+  timezone: string
+  venue_name: string | null
+  venue_address: string | null
+  map_url: string | null
+  dress_code: string | null
+  sort_order: number
+}
+
+export interface RegistryItem {
+  id: string
+  invitation_id: string
+  title: string
+  description: string | null
+  url: string
+  button_label: string
+  image_url: string | null
+  sort_order: number
+}
+
+export interface AdminWeddingEvent {
+  id: string
+  title: string
+  description: string | null
+  event_date: string | null
+  event_time: string | null
+  timezone: string
+  venue_name: string | null
+  venue_address: string | null
+  map_url: string | null
+  dress_code: string | null
+  sort_order: number
+}
+
+export interface AdminRegistryItem {
+  id: string
+  title: string
+  description: string | null
+  url: string
+  button_label: string
+  image_url: string | null
+  sort_order: number
 }

@@ -3,6 +3,7 @@ export interface RsvpFormValues {
   phone: string
   attendance: 'attending' | 'not_attending' | ''
   guestCount: number
+  comingFrom: string
   message: string
 }
 
@@ -11,6 +12,7 @@ export interface RsvpFormErrors {
   phone?: string
   attendance?: string
   guestCount?: string
+  comingFrom?: string
   message?: string
 }
 
@@ -45,6 +47,10 @@ export function validateRsvp(values: RsvpFormValues, maxGuests: number): RsvpFor
     } else if (values.guestCount > maxGuests) {
       errors.guestCount = `Please keep it to ${maxGuests} guests or fewer.`
     }
+  }
+
+  if (values.comingFrom && sanitizeText(values.comingFrom).length > 200) {
+    errors.comingFrom = 'That\'s a bit long (200 characters max).'
   }
 
   if (values.message && sanitizeText(values.message).length > 500) {

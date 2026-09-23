@@ -1,13 +1,15 @@
 /**
- * Three-stage first-open experience: sealed envelope → opened envelope with
- * invitation card → transition into the real website.
+ * Four-stage first-open experience inspired by the reference storyboard:
+ *   1. Sealed envelope appears with gold monogram seal
+ *   2. "YOU ARE CORDIALLY INVITED" shimmers in beneath the envelope
+ *   3. Click → flap opens smoothly, card rises out
+ *   4. Click card → dissolves into the real website
  *
- * Everything uses the site's existing palette only (wine paper, warm gold,
- * ink cream) and the ONE canonical FG monogram. Motion is slow and soft:
- * no bounce, no spin, no particles. `prefers-reduced-motion` collapses the
- * transforms and keeps the same three-beat flow.
+ * Everything uses the site's palette (wine paper, warm gold, ink cream)
+ * and the canonical FG monogram. Motion is slow and soft — no bounce, no
+ * spin. `prefers-reduced-motion` collapses transforms, keeps the same flow.
  *
- * The invitation card (stage 2) only appears once the real database record
+ * The invitation card (stage 3) only appears once the real database record
  * has loaded, so the card always shows the true names/date/venue.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -24,9 +26,9 @@ interface Props {
 type Stage = 'sealed' | 'opening' | 'card' | 'entering'
 
 const TIMING = {
-  flapOpenMs: 1400, // flap lift after click 1
-  cardRiseMs: 1600, // card emerges after the flap
-  enterMs: 1200 // card → website dissolve after click 2
+  flapOpenMs: 1600, // flap lift after click 1 — slower, more cinematic
+  cardRiseMs: 1800, // card emerges after the flap
+  enterMs: 1400 // card → website dissolve after click 2
 }
 
 const EASE_LUX = 'cubic-bezier(0.33, 0.02, 0.2, 1)' // soft, expensive feel
@@ -36,6 +38,7 @@ const isTouch =
 
 export default function EnvelopeIntro({ invitation, onFinished }: Props) {
   const [stage, setStage] = useState<Stage>('sealed')
+  const [showInvited, setShowInvited] = useState(false)
   const timers = useRef<number[]>([])
   const reduced =
     typeof window !== 'undefined' &&
@@ -56,13 +59,18 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
     [reduced]
   )
 
+  // Stage 2: "YOU ARE CORDIALLY INVITED" appears shortly after the envelope
+  useEffect(() => {
+    after(reduced ? 200 : 1200, () => setShowInvited(true))
+  }, [reduced, after])
+
   const openEnvelope = useCallback(() => {
     if (stage !== 'sealed') return
+    setShowInvited(false)
     setStage('opening')
   }, [stage])
 
-  // The card rises only once the flap is open AND the data is ready — if the
-  // network is slow the guest simply sees the open envelope a beat longer.
+  // The card rises only once the flap is open AND the data is ready
   useEffect(() => {
     if (stage !== 'opening' || !invitation) return
     after(TIMING.flapOpenMs * 0.55, () => setStage('card'))
@@ -93,14 +101,14 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-paper"
       role="dialog"
       aria-label="Wedding invitation"
-      style={{ perspective: '1200px' }}
+      style={{ perspective: '1400px' }}
     >
-      {/* Soft atmospheric depth: one faint gold ambiance behind the envelope */}
+      {/* Soft atmospheric depth: gold ambiance behind the envelope */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div
           className="absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
-            background: 'radial-gradient(closest-side, rgba(201,168,119,0.10), transparent 70%)',
+            background: 'radial-gradient(closest-side, rgba(201,168,119,0.12), transparent 70%)',
             opacity: stage === 'entering' ? 0 : 1,
             transition: `opacity ${TIMING.enterMs}ms ease`
           }}
@@ -113,12 +121,9 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
         style={{
           width: 'min(88vw, 560px)',
           aspectRatio: '8 / 5.4',
-          // Stage 2: the open envelope recedes — scales down and drops back
-          // (translateZ) so the risen card reads as the hero in front, with
-          // the envelope peeking out behind it, like reference image 4.
           transform:
             stage === 'entering'
-              ? 'translateZ(-90px) scale(0.98)'
+              ? 'translateZ(-90px) scale(0.96)'
               : onCard
                 ? 'translateZ(-70px) scale(0.98)'
                 : 'none',
@@ -149,13 +154,11 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           style={{
             background: 'linear-gradient(175deg, #47131f 0%, #3a0d17 100%)',
             opacity: envelopeOpen ? 1 : 0,
-            transition: 'opacity 700ms ease'
+            transition: 'opacity 900ms ease'
           }}
         />
 
-        {/* Card slide wrapper: clips the card to the envelope's bounds while
-            sealed/opening so nothing can leak out; unclips (and lifts above
-            the pocket) at the card stage so the risen card is fully visible. */}
+        {/* Card slide wrapper: clips the card while sealed/opening */}
         <div
           className="absolute inset-0"
           style={{
@@ -169,9 +172,6 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           style={{
             bottom: '6%',
             height: '128%',
-            // SEALED: tucked inside, top just below the envelope top (clipped
-            // by the wrapper, covered by flap + pocket). CARD: settles at the
-            // viewport center while the envelope glides down behind it.
             transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '17%' : '28%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
             transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
             pointerEvents: onCard ? 'auto' : 'none',
@@ -193,12 +193,35 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.55)'
             }}
           />
+          {/* ornate corner flourishes on the card */}
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            {/* Top-left corner */}
+            <svg className="absolute left-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+              <path d="M2 2 C 12 2, 16 6, 18 14 C 14 8, 8 6, 2 6" />
+              <path d="M2 2 C 2 8, 4 12, 10 14 C 6 10, 4 6, 2 2" opacity="0.6" />
+            </svg>
+            {/* Top-right corner */}
+            <svg className="absolute right-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+              <path d="M30 2 C 20 2, 16 6, 14 14 C 18 8, 24 6, 30 6" />
+              <path d="M30 2 C 30 8, 28 12, 22 14 C 26 10, 28 6, 30 2" opacity="0.6" />
+            </svg>
+            {/* Bottom-left corner */}
+            <svg className="absolute bottom-2 left-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+              <path d="M2 30 C 12 30, 16 26, 18 18 C 14 24, 8 26, 2 26" />
+              <path d="M2 30 C 2 24, 4 20, 10 18 C 6 22, 4 26, 2 30" opacity="0.6" />
+            </svg>
+            {/* Bottom-right corner */}
+            <svg className="absolute bottom-2 right-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+              <path d="M30 30 C 20 30, 16 26, 14 18 C 18 24, 24 26, 30 26" />
+              <path d="M30 30 C 30 24, 28 20, 22 18 C 26 22, 28 26, 30 30" opacity="0.6" />
+            </svg>
+          </div>
           {/* card content — same identity as the website hero */}
           <div
             className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
             style={{
               opacity: onCard || stage === 'entering' ? 1 : 0,
-              transition: 'opacity 900ms ease 300ms'
+              transition: 'opacity 1000ms ease 400ms'
             }}
           >
             <FgMonogram halo="#ead9bf" className="h-16 w-auto text-[#3c0d18] sm:h-20" />
@@ -225,7 +248,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
         </div>
         </div>
 
-        {/* envelope pocket (front) — two side folds + bottom, above the card */}
+        {/* envelope pocket (front) — two side folds + bottom */}
         <div className="absolute inset-0" style={{ zIndex: 4, pointerEvents: 'none' }}>
           <div
             className="absolute inset-x-0 bottom-0 h-1/2 rounded-b-[3px]"
@@ -238,8 +261,6 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
             className="absolute inset-y-0 left-0 w-1/2"
             style={{
               background: 'linear-gradient(115deg, #45101c 0%, #380b15 70%)',
-              // 56% edge matches the flap's hypotenuse exactly, so fold and
-              // flap meet with no gap for the card to peek through.
               clipPath: 'polygon(0 0, 100% 56%, 0 100%)'
             }}
           />
@@ -264,7 +285,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
             height: '56%',
             zIndex: envelopeOpen ? 2 : 6,
             transformOrigin: 'top center',
-            transform: `rotateX(${envelopeOpen ? (reduced ? 8 : 168) : 0}deg)`,
+            transform: `rotateX(${envelopeOpen ? (reduced ? 8 : 172) : 0}deg)`,
             transition: `transform ${TIMING.flapOpenMs}ms ${EASE_LUX}`,
             pointerEvents: 'none',
             backfaceVisibility: 'hidden'
@@ -280,16 +301,16 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           />
         </div>
 
-        {/* FG seal on the flap — moves with it, gold, breathing candlelight */}
+        {/* FG seal on the flap — gold, breathing candlelight */}
         <div
           aria-hidden
           className="absolute left-1/2"
           style={{
             top: '30%',
             zIndex: 7,
-            transform: `translateX(-50%) translateY(${envelopeOpen ? '-46%' : '0'}) rotateX(${envelopeOpen ? (reduced ? 8 : 168) : 0}deg)`,
+            transform: `translateX(-50%) translateY(${envelopeOpen ? '-46%' : '0'}) rotateX(${envelopeOpen ? (reduced ? 8 : 172) : 0}deg)`,
             transformOrigin: 'top center',
-            transition: `transform ${TIMING.flapOpenMs}ms ${EASE_LUX}, opacity 900ms ease`,
+            transition: `transform ${TIMING.flapOpenMs}ms ${EASE_LUX}, opacity 1000ms ease`,
             opacity: envelopeOpen ? 0 : 1
           }}
         >
@@ -300,7 +321,17 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
       </div>
 
       {/* ===================== CUE TEXT ===================== */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[12vh] flex flex-col items-center gap-3">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] flex flex-col items-center gap-3">
+        {/* "YOU ARE CORDIALLY INVITED" — appears in stage 2 */}
+        {showInvited && stage === 'sealed' && (
+          <p
+            className="animate-fade text-[11px] uppercase tracking-widest2 text-clay"
+            style={{ animationDuration: '1.2s' }}
+          >
+            You are cordially invited
+          </p>
+        )}
+        {/* TAP / CLICK cues */}
         {stage === 'sealed' && (
           <p className="cue-fade text-[11px] uppercase tracking-widest2 text-clay/90">
             {isTouch ? 'Tap the envelope to open' : 'Click the envelope to open'}

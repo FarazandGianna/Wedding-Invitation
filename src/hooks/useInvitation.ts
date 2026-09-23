@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import type { GalleryItem, Invitation, InvitationSection } from '../types/invitation'
+import type { GalleryItem, Invitation, InvitationSection, RegistryItem, WeddingEvent } from '../types/invitation'
 
 // Only the public-facing columns are selected — nothing admin-only lives on
 // this table, but keeping an explicit column list documents intent and
@@ -22,6 +22,8 @@ type State =
       invitation: Invitation
       sections: Record<string, boolean>
       gallery: GalleryItem[]
+      events: WeddingEvent[]
+      registry: RegistryItem[]
     }
 
 export function useInvitation(slug: string | undefined) {
@@ -55,7 +57,7 @@ export function useInvitation(slug: string | undefined) {
         return
       }
 
-      const [{ data: sectionRows }, { data: galleryRows }] = await Promise.all([
+      const [{ data: sectionRows }, { data: galleryRows }, { data: eventRows, error: eventErr }, { data: registryRows, error: regErr }] = await Promise.all([
         supabase
           .from('invitation_sections')
           .select('section_key, is_enabled, sort_order')
@@ -65,10 +67,25 @@ export function useInvitation(slug: string | undefined) {
           .from('gallery_items')
           .select('id, invitation_id, storage_path, image_url, alt_text, sort_order')
           .eq('invitation_id', invitation.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('wedding_events')
+          .select('id, invitation_id, title, description, event_date, event_time, timezone, venue_name, venue_address, map_url, dress_code, sort_order')
+          .eq('invitation_id', invitation.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('registry_items')
+          .select('id, invitation_id, title, description, url, button_label, image_url, sort_order')
+          .eq('invitation_id', invitation.id)
           .order('sort_order', { ascending: true })
       ])
 
       if (cancelled) return
+
+      // Fail soft: if the tables don't exist yet (migration not applied),
+      // treat as empty arrays rather than crashing the whole page.
+      const events = eventErr ? [] : (eventRows ?? []) as WeddingEvent[]
+      const registry = regErr ? [] : (registryRows ?? []) as RegistryItem[]
 
       const sections: Record<string, boolean> = {}
       for (const row of (sectionRows ?? []) as Pick<InvitationSection, 'section_key' | 'is_enabled'>[]) {
@@ -79,7 +96,9 @@ export function useInvitation(slug: string | undefined) {
         status: 'ready',
         invitation,
         sections,
-        gallery: (galleryRows ?? []) as GalleryItem[]
+        gallery: (galleryRows ?? []) as GalleryItem[],
+        events,
+        registry
       })
     }
 

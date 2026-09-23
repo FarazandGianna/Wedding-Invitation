@@ -3,11 +3,13 @@ import { supabase } from '../lib/supabaseClient'
 import type {
   AdminRsvpRow,
   AdminSummary,
+  AdminWeddingEvent,
+  AdminRegistryItem,
   Invitation,
   SectionKey
 } from '../types/invitation'
 
-type Tab = 'guests' | 'details' | 'sections' | 'gallery'
+type Tab = 'guests' | 'details' | 'sections' | 'gallery' | 'events' | 'registry'
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   hero: 'Hero (names + date)',
@@ -17,7 +19,9 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   details: 'Details (when/contact)',
   venue: 'Venue (where/map)',
   gallery: 'Gallery',
+  itinerary: 'Itinerary (Pakistan events)',
   rsvp: 'RSVP form',
+  registry: 'Wedding registry',
   contact: 'Contact',
   footer: 'Footer'
 }
@@ -137,7 +141,7 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
       </header>
 
       <nav className="mx-auto mt-6 flex max-w-5xl gap-2 border-b border-line/70">
-        {(['guests', 'details', 'sections', 'gallery'] as Tab[]).map((t) => (
+        {(['guests', 'details', 'sections', 'gallery', 'events', 'registry'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -146,7 +150,7 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
               tab === t ? 'border-clay text-ink' : 'border-transparent text-clay hover:text-ink'
             }`}
           >
-            {t === 'guests' ? 'Guest list' : t}
+            {t === 'guests' ? 'Guest list' : t === 'events' ? 'Events' : t === 'registry' ? 'Registry' : t}
           </button>
         ))}
       </nav>
@@ -156,6 +160,8 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
         {tab === 'details' && <DetailsTab passcode={passcode} slug={slug} />}
         {tab === 'sections' && <SectionsTab passcode={passcode} slug={slug} />}
         {tab === 'gallery' && <GalleryTab passcode={passcode} slug={slug} />}
+        {tab === 'events' && <EventsTab passcode={passcode} slug={slug} />}
+        {tab === 'registry' && <RegistryTab passcode={passcode} slug={slug} />}
       </main>
     </div>
   )
@@ -198,9 +204,9 @@ function GuestsTab({ passcode, slug }: { passcode: string; slug: string }) {
 
   function exportCsv() {
     if (!rows) return
-    const header = ['Name', 'Phone', 'Status', 'Guests', 'Message', 'Submitted']
+    const header = ['Name', 'Phone', 'Status', 'Guests', 'Coming From', 'Message', 'Submitted']
     const lines = rows.map((r) =>
-      [r.full_name, r.phone ?? '', r.attendance_status, r.guest_count ?? '', r.message ?? '', r.submitted_at]
+      [r.full_name, r.phone ?? '', r.attendance_status, r.guest_count ?? '', r.coming_from ?? '', r.message ?? '', r.submitted_at]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(',')
     )
@@ -251,6 +257,7 @@ function GuestsTab({ passcode, slug }: { passcode: string; slug: string }) {
                 <th className="px-4 py-3">Phone</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Guests</th>
+                <th className="px-4 py-3">From</th>
                 <th className="px-4 py-3">Message</th>
                 <th className="px-4 py-3">Submitted</th>
                 <th className="px-4 py-3" aria-label="actions" />
@@ -267,6 +274,7 @@ function GuestsTab({ passcode, slug }: { passcode: string; slug: string }) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-ink/80">{r.guest_count ?? '—'}</td>
+                  <td className="px-4 py-3 text-ink/80">{r.coming_from ?? '—'}</td>
                   <td className="max-w-[220px] truncate px-4 py-3 text-ink/70" title={r.message ?? ''}>
                     {r.message ?? '—'}
                   </td>
@@ -470,6 +478,12 @@ function DetailsTab({ passcode, slug }: { passcode: string; slug: string }) {
 /* --------------------------------- sections -------------------------------- */
 
 function SectionsTab({ passcode, slug }: { passcode: string; slug: string }) {
+  // Render ALL known section keys — not just rows that exist in the DB.
+  // Missing rows default to enabled (matching isSectionEnabled semantics).
+  const ALL_SECTION_KEYS: SectionKey[] = [
+    'hero', 'couple', 'message', 'countdown', 'details',
+    'venue', 'gallery', 'itinerary', 'rsvp', 'registry', 'contact', 'footer'
+  ]
   const [rows, setRows] = useState<{ section_key: SectionKey; is_enabled: boolean }[] | null>(null)
   const [status, setStatus] = useState<string | null>(null)
 
@@ -480,7 +494,13 @@ function SectionsTab({ passcode, slug }: { passcode: string; slug: string }) {
       .from('invitation_sections')
       .select('section_key, is_enabled')
       .eq('invitation_id', (inv.data as { id: string }).id)
-    setRows((data ?? []) as { section_key: SectionKey; is_enabled: boolean }[])
+    const dbRows = (data ?? []) as { section_key: SectionKey; is_enabled: boolean }[]
+    // Merge: start with all known keys defaulting to enabled, override with DB values
+    const merged: { section_key: SectionKey; is_enabled: boolean }[] = ALL_SECTION_KEYS.map(key => {
+      const dbRow = dbRows.find(r => r.section_key === key)
+      return { section_key: key, is_enabled: dbRow ? dbRow.is_enabled : true }
+    })
+    setRows(merged)
   }, [slug])
 
   useEffect(() => {
@@ -627,4 +647,406 @@ function inputCls(hasError = false) {
   return `w-full min-h-11 border bg-transparent px-4 py-3 text-sm text-ink outline-none transition-colors ${
     hasError ? 'border-rose-400' : 'border-ink/20 focus:border-ink/50'
   }`
+}
+
+/* ---------------------------------- events --------------------------------- */
+
+const EVENT_FIELDS: FieldDef[] = [
+  { key: 'title', label: 'Event title', type: 'text', hint: 'e.g. Mehndi, Barat, Walima' },
+  { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'event_date', label: 'Date', type: 'date', hint: 'Leave blank if TBD' },
+  { key: 'event_time', label: 'Time', type: 'time', hint: 'Leave blank if TBD' },
+  { key: 'timezone', label: 'Timezone', type: 'text', hint: 'IANA name, e.g. Asia/Karachi' },
+  { key: 'venue_name', label: 'Venue name', type: 'text' },
+  { key: 'venue_address', label: 'Venue address', type: 'text' },
+  { key: 'map_url', label: 'Map link', type: 'text' },
+  { key: 'dress_code', label: 'Dress code', type: 'text', hint: 'e.g. Formal, Traditional' },
+  { key: 'sort_order', label: 'Sort order', type: 'number', hint: 'Lower appears first' }
+]
+
+function EventsTab({ passcode, slug }: { passcode: string; slug: string }) {
+  const [events, setEvents] = useState<AdminWeddingEvent[] | null>(null)
+  const [editing, setEditing] = useState<AdminWeddingEvent | null>(null)
+  const [draft, setDraft] = useState<Record<string, string>>({})
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const reload = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_list_wedding_events', {
+      p_passcode: passcode,
+      p_slug: slug
+    })
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setEvents((data ?? []) as AdminWeddingEvent[])
+  }, [passcode, slug])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  function startEdit(event: AdminWeddingEvent | null) {
+    setEditing(event)
+    setStatus(null)
+    const d: Record<string, string> = {}
+    for (const f of EVENT_FIELDS) {
+      const v = event ? (event as unknown as Record<string, unknown>)[f.key] : null
+      d[f.key] = v === null || v === undefined ? '' : String(v)
+    }
+    setDraft(d)
+  }
+
+  async function save() {
+    setBusy(true)
+    setStatus(null)
+    const payload: Record<string, unknown> = {}
+    for (const f of EVENT_FIELDS) {
+      const str = String(draft[f.key] ?? '').trim()
+      payload[f.key] = str === '' ? null : str
+    }
+    // Ensure title is present
+    if (!payload.title) {
+      setStatus('Title is required.')
+      setBusy(false)
+      return
+    }
+    const { error } = await supabase.rpc('admin_save_wedding_event', {
+      p_passcode: passcode,
+      p_slug: slug,
+      p_event_id: editing?.id ?? null,
+      p_payload: payload
+    })
+    setBusy(false)
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setEditing(null)
+    setStatus(editing ? 'Event updated.' : 'Event added.')
+    reload()
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Delete this event? This cannot be undone.')) return
+    await supabase.rpc('admin_delete_wedding_event', { p_passcode: passcode, p_event_id: id })
+    reload()
+  }
+
+  if (!events) return <p className="text-sm text-ink/60">Loading…</p>
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-ink/60">Manage the events shown in the Pakistan itinerary.</p>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => startEdit(null)}
+            className="min-h-10 border border-ink bg-ink px-5 py-2 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90"
+          >
+            Add event
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div className="mt-6 border border-line/70 bg-paperDeep/30 p-6">
+          <h3 className="font-serif text-xl text-ink">{editing ? 'Edit event' : 'New event'}</h3>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {EVENT_FIELDS.map((f) => (
+              <div key={f.key} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                <label htmlFor={`e-${f.key}`} className="mb-2 block text-xs uppercase tracking-widest2 text-clay">
+                  {f.label}
+                </label>
+                {f.type === 'textarea' ? (
+                  <textarea
+                    id={`e-${f.key}`}
+                    rows={3}
+                    value={String(draft[f.key] ?? '')}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                    className={inputCls()}
+                  />
+                ) : (
+                  <input
+                    id={`e-${f.key}`}
+                    type={f.type}
+                    value={String(draft[f.key] ?? '')}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+                {f.hint && <p className="mt-1 text-[11px] text-ink/50">{f.hint}</p>}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy}
+              className="min-h-11 border border-ink bg-ink px-8 py-3 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? 'Saving…' : 'Save event'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="min-h-11 border border-ink/20 px-6 py-3 text-xs uppercase tracking-widest2 text-ink transition-colors hover:bg-ink/10"
+            >
+              Cancel
+            </button>
+          </div>
+          {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}
+        </div>
+      )}
+
+      {status && !editing && <p className="mt-4 text-sm text-emerald-300">{status}</p>}
+
+      {events.length > 0 && !editing && (
+        <div className="mt-6 space-y-3">
+          {events.map((event) => (
+            <div key={event.id} className="flex items-start justify-between gap-4 border border-line/40 px-5 py-4">
+              <div>
+                <p className="font-serif text-lg text-ink">{event.title}</p>
+                {event.event_date && (
+                  <p className="mt-1 text-xs text-clay">
+                    {event.event_date}{event.event_time ? ` · ${String(event.event_time).slice(0, 5)}` : ''}
+                    {event.venue_name ? ` · ${event.venue_name}` : ''}
+                  </p>
+                )}
+                {event.description && (
+                  <p className="mt-1 text-xs text-ink/60 line-clamp-2">{event.description}</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEdit(event)}
+                  className="text-xs uppercase tracking-widest2 text-clay hover:text-ink"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(event.id)}
+                  className="text-xs uppercase tracking-widest2 text-rose-300 hover:text-rose-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {events.length === 0 && !editing && (
+        <p className="mt-8 text-center text-sm text-ink/60">
+          No events yet. Add your first event (Mehndi, Barat, Walima, etc.).
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* --------------------------------- registry -------------------------------- */
+
+const REGISTRY_FIELDS: FieldDef[] = [
+  { key: 'title', label: 'Title', type: 'text', hint: 'e.g. Amazon Registry, Honeyfund' },
+  { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'url', label: 'Link URL', type: 'text' },
+  { key: 'button_label', label: 'Button label', type: 'text', hint: 'Defaults to “View registry”' },
+  { key: 'image_url', label: 'Image URL', type: 'text', hint: 'Optional preview image' },
+  { key: 'sort_order', label: 'Sort order', type: 'number', hint: 'Lower appears first' }
+]
+
+function RegistryTab({ passcode, slug }: { passcode: string; slug: string }) {
+  const [items, setItems] = useState<AdminRegistryItem[] | null>(null)
+  const [editing, setEditing] = useState<AdminRegistryItem | null>(null)
+  const [draft, setDraft] = useState<Record<string, string>>({})
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const reload = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_list_registry_items', {
+      p_passcode: passcode,
+      p_slug: slug
+    })
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setItems((data ?? []) as AdminRegistryItem[])
+  }, [passcode, slug])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  function startEdit(item: AdminRegistryItem | null) {
+    setEditing(item)
+    setStatus(null)
+    const d: Record<string, string> = {}
+    for (const f of REGISTRY_FIELDS) {
+      const v = item ? (item as unknown as Record<string, unknown>)[f.key] : null
+      d[f.key] = v === null || v === undefined ? '' : String(v)
+    }
+    setDraft(d)
+  }
+
+  async function save() {
+    setBusy(true)
+    setStatus(null)
+    const payload: Record<string, unknown> = {}
+    for (const f of REGISTRY_FIELDS) {
+      const str = String(draft[f.key] ?? '').trim()
+      payload[f.key] = str === '' ? null : str
+    }
+    if (!payload.title) {
+      setStatus('Title is required.')
+      setBusy(false)
+      return
+    }
+    if (!payload.url) {
+      setStatus('URL is required.')
+      setBusy(false)
+      return
+    }
+    const { error } = await supabase.rpc('admin_save_registry_item', {
+      p_passcode: passcode,
+      p_slug: slug,
+      p_item_id: editing?.id ?? null,
+      p_payload: payload
+    })
+    setBusy(false)
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setEditing(null)
+    setStatus(editing ? 'Registry item updated.' : 'Registry item added.')
+    reload()
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Delete this registry item? This cannot be undone.')) return
+    await supabase.rpc('admin_delete_registry_item', { p_passcode: passcode, p_item_id: id })
+    reload()
+  }
+
+  if (!items) return <p className="text-sm text-ink/60">Loading…</p>
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-ink/60">Manage the wedding registry links shown to guests.</p>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => startEdit(null)}
+            className="min-h-10 border border-ink bg-ink px-5 py-2 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90"
+          >
+            Add registry
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div className="mt-6 border border-line/70 bg-paperDeep/30 p-6">
+          <h3 className="font-serif text-xl text-ink">{editing ? 'Edit registry item' : 'New registry item'}</h3>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {REGISTRY_FIELDS.map((f) => (
+              <div key={f.key} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                <label htmlFor={`r-${f.key}`} className="mb-2 block text-xs uppercase tracking-widest2 text-clay">
+                  {f.label}
+                </label>
+                {f.type === 'textarea' ? (
+                  <textarea
+                    id={`r-${f.key}`}
+                    rows={3}
+                    value={String(draft[f.key] ?? '')}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                    className={inputCls()}
+                  />
+                ) : (
+                  <input
+                    id={`r-${f.key}`}
+                    type={f.type}
+                    value={String(draft[f.key] ?? '')}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+                {f.hint && <p className="mt-1 text-[11px] text-ink/50">{f.hint}</p>}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy}
+              className="min-h-11 border border-ink bg-ink px-8 py-3 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? 'Saving…' : 'Save item'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="min-h-11 border border-ink/20 px-6 py-3 text-xs uppercase tracking-widest2 text-ink transition-colors hover:bg-ink/10"
+            >
+              Cancel
+            </button>
+          </div>
+          {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}
+        </div>
+      )}
+
+      {status && !editing && <p className="mt-4 text-sm text-emerald-300">{status}</p>}
+
+      {items.length > 0 && !editing && (
+        <div className="mt-6 space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-start justify-between gap-4 border border-line/40 px-5 py-4">
+              <div className="flex gap-4">
+                {item.image_url && (
+                  <img src={item.image_url} alt={item.title} className="h-16 w-16 object-cover" />
+                )}
+                <div>
+                  <p className="font-serif text-lg text-ink">{item.title}</p>
+                  <p className="mt-1 text-xs text-clay">{item.button_label} · {item.url}</p>
+                  {item.description && (
+                    <p className="mt-1 text-xs text-ink/60 line-clamp-2">{item.description}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEdit(item)}
+                  className="text-xs uppercase tracking-widest2 text-clay hover:text-ink"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(item.id)}
+                  className="text-xs uppercase tracking-widest2 text-rose-300 hover:text-rose-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {items.length === 0 && !editing && (
+        <p className="mt-8 text-center text-sm text-ink/60">
+          No registry items yet. Add your first registry link.
+        </p>
+      )}
+    </div>
+  )
 }

@@ -104,6 +104,7 @@ async function rpc(fn, body) {
     p_phone: null,
     p_attendance_status: 'attending',
     p_guest_count: 2,
+    p_coming_from: 'New York, USA',
     p_message: 'api-test run'
   })
   const row = Array.isArray(json) ? json[0] : null
@@ -122,6 +123,7 @@ async function rpc(fn, body) {
     p_phone: TEST_PHONE,
     p_attendance_status: 'attending',
     p_guest_count: 1,
+    p_coming_from: 'Already in Pakistan',
     p_message: null
   }
   const first = await rpc('submit_rsvp', args)
@@ -146,6 +148,7 @@ async function rpc(fn, body) {
     p_phone: null,
     p_attendance_status: 'maybe',
     p_guest_count: 1,
+    p_coming_from: null,
     p_message: null
   })
   check('invalid attendance_status rejected', status === 400 && text.includes('INVALID_STATUS'), text.slice(0, 80))
@@ -166,6 +169,7 @@ async function rpc(fn, body) {
     p_phone: null,
     p_attendance_status: 'attending',
     p_guest_count: 1,
+    p_coming_from: null,
     p_message: null
   })
   check('unknown slug rejected', status === 400 && text.includes('INVITATION_NOT_FOUND'), text.slice(0, 80))

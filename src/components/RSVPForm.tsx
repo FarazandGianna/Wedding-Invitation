@@ -10,6 +10,7 @@ const initialValues: RsvpFormValues = {
   phone: '',
   attendance: '',
   guestCount: 1,
+  comingFrom: '',
   message: ''
 }
 
@@ -39,6 +40,7 @@ export default function RSVPForm({ invitation }: { invitation: Invitation }) {
       p_phone: values.phone ? sanitizeText(values.phone) : null,
       p_attendance_status: values.attendance,
       p_guest_count: values.attendance === 'attending' ? values.guestCount : null,
+      p_coming_from: values.comingFrom ? sanitizeText(values.comingFrom) : null,
       p_message: values.message ? sanitizeText(values.message) : null
     })
 
@@ -147,6 +149,21 @@ export default function RSVPForm({ invitation }: { invitation: Invitation }) {
             </select>
           </Field>
         )}
+
+        <Field label="Where are you coming from? (optional)" htmlFor="comingFrom" error={errors.comingFrom}>
+          <input
+            id="comingFrom"
+            name="comingFrom"
+            type="text"
+            placeholder="e.g. New York, USA or Already in Pakistan"
+            value={values.comingFrom}
+            onChange={(e) => setValues((v) => ({ ...v, comingFrom: e.target.value }))}
+            className={inputClass(Boolean(errors.comingFrom))}
+          />
+          <p className="mt-1.5 text-[11px] text-ink/50">
+            It would help us a lot to know where you're travelling from.
+          </p>
+        </Field>
 
         <Field label="Message (optional)" htmlFor="message" error={errors.message}>
           <textarea
