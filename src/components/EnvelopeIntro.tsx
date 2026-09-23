@@ -95,21 +95,86 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
       aria-label="Wedding invitation"
       style={{ perspective: '1400px' }}
     >
-      {/* Gold ambiance behind the envelope */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            background: 'radial-gradient(closest-side, rgba(201,168,119,0.12), transparent 70%)',
-            opacity: stage === 'entering' ? 0 : 1,
-            transition: `opacity ${TIMING.enterMs}ms ease`
-          }}
-        />
+      {/* ======================== SCENE DECORATION (matches reference) ======================== */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+        {/* Vignette — darken edges to focus center */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, rgba(20,4,8,0.5) 80%, rgba(10,2,4,0.85) 100%)' }} />
+
+        {/* Top-center spotlight illuminating the envelope */}
+        <div className="absolute left-1/2 top-0 h-[55vh] w-[70vw] -translate-x-1/2" style={{ background: 'radial-gradient(ellipse 50% 70% at 50% 0%, rgba(201,168,119,0.18) 0%, rgba(201,168,119,0.06) 35%, transparent 70%)' }} />
+
+        {/* Bottom reflective surface */}
+        <div className="absolute bottom-0 left-0 right-0 h-[35vh]" style={{ background: 'linear-gradient(to top, rgba(15,3,6,0.7) 0%, rgba(30,8,16,0.4) 30%, transparent 100%)' }} />
+        {/* Warm reflection glow under envelope */}
+        <div className="absolute left-1/2 bottom-[6vh] h-[8vh] w-[50vw] -translate-x-1/2 rounded-[50%]" style={{ background: 'radial-gradient(closest-side, rgba(201,168,119,0.08), transparent 80%)', filter: 'blur(12px)' }} />
+
+        {/* Golden bokeh particles near floral areas */}
+        <div className="absolute left-[6%] top-[10%] h-3.5 w-3.5 rounded-full" style={{ background: 'rgba(201,168,119,0.5)', filter: 'blur(4px)', opacity: 0.25 }} />
+        <div className="absolute left-[14%] top-[22%] h-2 w-2 rounded-full" style={{ background: 'rgba(201,168,119,0.5)', filter: 'blur(3px)', opacity: 0.18 }} />
+        <div className="absolute left-[4%] top-[32%] h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(201,168,119,0.5)', filter: 'blur(2px)', opacity: 0.12 }} />
+        <div className="absolute right-[7%] top-[12%] h-4 w-4 rounded-full" style={{ background: 'rgba(201,168,119,0.5)', filter: 'blur(5px)', opacity: 0.22 }} />
+        <div className="absolute right-[15%] top-[26%] h-2 w-2 rounded-full" style={{ background: 'rgba(201,168,119,0.5)', filter: 'blur(3px)', opacity: 0.16 }} />
+        <div className="absolute right-[5%] top-[38%] h-2.5 w-2.5 rounded-full" style={{ background: 'rgba(201,168,119,0.5)', filter: 'blur(3px)', opacity: 0.14 }} />
+
+        {/* Floral arrangement — top-left corner (burgundy roses + baby's breath) */}
+        <svg className="absolute -left-6 -top-6 h-44 w-44 opacity-70" viewBox="0 0 200 200" fill="none" aria-hidden>
+          <circle cx="38" cy="48" r="24" fill="#4a0d18" />
+          <circle cx="38" cy="48" r="18" fill="#5a1020" />
+          <circle cx="38" cy="48" r="12" fill="#6a1525" />
+          <circle cx="38" cy="48" r="6" fill="#7a1a2a" opacity="0.7" />
+          <circle cx="68" cy="32" r="17" fill="#3a0a14" />
+          <circle cx="68" cy="32" r="12" fill="#4a0d18" />
+          <circle cx="68" cy="32" r="7" fill="#5a1020" />
+          <circle cx="22" cy="78" r="15" fill="#3a0a14" />
+          <circle cx="22" cy="78" r="10" fill="#4a0d18" />
+          <circle cx="22" cy="78" r="6" fill="#5a1020" />
+          <circle cx="85" cy="50" r="2.5" fill="#e8d5b8" opacity="0.65" />
+          <circle cx="92" cy="42" r="2" fill="#e8d5b8" opacity="0.55" />
+          <circle cx="88" cy="60" r="2" fill="#e8d5b8" opacity="0.5" />
+          <circle cx="95" cy="55" r="1.5" fill="#e8d5b8" opacity="0.6" />
+          <circle cx="100" cy="48" r="1.5" fill="#e8d5b8" opacity="0.45" />
+          <circle cx="78" cy="68" r="1.5" fill="#e8d5b8" opacity="0.4" />
+          <circle cx="10" cy="100" r="2" fill="#e8d5b8" opacity="0.5" />
+          <circle cx="18" cy="108" r="1.5" fill="#e8d5b8" opacity="0.4" />
+          <circle cx="5" cy="90" r="1.5" fill="#e8d5b8" opacity="0.35" />
+          <path d="M52 72 Q 62 82 68 92" stroke="#2a1a0e" strokeWidth="1.2" opacity="0.4" fill="none" />
+          <path d="M48 78 Q 42 88 38 98" stroke="#2a1a0e" strokeWidth="1" opacity="0.35" fill="none" />
+          <path d="M58 85 Q 55 95 52 105" stroke="#2a1a0e" strokeWidth="0.8" opacity="0.3" fill="none" />
+        </svg>
+
+        {/* Floral arrangement — top-right corner (mirror) */}
+        <svg className="absolute -right-6 -top-6 h-44 w-44 opacity-70" viewBox="0 0 200 200" fill="none" aria-hidden style={{ transform: 'scaleX(-1)' }}>
+          <circle cx="38" cy="48" r="24" fill="#4a0d18" />
+          <circle cx="38" cy="48" r="18" fill="#5a1020" />
+          <circle cx="38" cy="48" r="12" fill="#6a1525" />
+          <circle cx="38" cy="48" r="6" fill="#7a1a2a" opacity="0.7" />
+          <circle cx="68" cy="32" r="17" fill="#3a0a14" />
+          <circle cx="68" cy="32" r="12" fill="#4a0d18" />
+          <circle cx="68" cy="32" r="7" fill="#5a1020" />
+          <circle cx="22" cy="78" r="15" fill="#3a0a14" />
+          <circle cx="22" cy="78" r="10" fill="#4a0d18" />
+          <circle cx="22" cy="78" r="6" fill="#5a1020" />
+          <circle cx="85" cy="50" r="2.5" fill="#e8d5b8" opacity="0.65" />
+          <circle cx="92" cy="42" r="2" fill="#e8d5b8" opacity="0.55" />
+          <circle cx="88" cy="60" r="2" fill="#e8d5b8" opacity="0.5" />
+          <circle cx="95" cy="55" r="1.5" fill="#e8d5b8" opacity="0.6" />
+          <circle cx="100" cy="48" r="1.5" fill="#e8d5b8" opacity="0.45" />
+          <circle cx="78" cy="68" r="1.5" fill="#e8d5b8" opacity="0.4" />
+          <circle cx="10" cy="100" r="2" fill="#e8d5b8" opacity="0.5" />
+          <circle cx="18" cy="108" r="1.5" fill="#e8d5b8" opacity="0.4" />
+          <circle cx="5" cy="90" r="1.5" fill="#e8d5b8" opacity="0.35" />
+          <path d="M52 72 Q 62 82 68 92" stroke="#2a1a0e" strokeWidth="1.2" opacity="0.4" fill="none" />
+          <path d="M48 78 Q 42 88 38 98" stroke="#2a1a0e" strokeWidth="1" opacity="0.35" fill="none" />
+          <path d="M58 85 Q 55 95 52 105" stroke="#2a1a0e" strokeWidth="0.8" opacity="0.3" fill="none" />
+        </svg>
+
+        {/* Center glow that fades when entering site */}
+        <div className="absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: 'radial-gradient(closest-side, rgba(201,168,119,0.12), transparent 70%)', opacity: stage === 'entering' ? 0 : 1, transition: `opacity ${TIMING.enterMs}ms ease` }} />
       </div>
 
       {/* ======================== ENVELOPE + CARD ======================== */}
       <div
-        className="relative select-none"
+        className="relative z-10 select-none"
         style={{
           width: 'min(82vw, 440px)',
           /* Horizontal envelope ~1.6:1 */
@@ -305,14 +370,14 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
             opacity: envelopeOpen ? 0 : 1
           }}
         >
-          <div className="envelope-breathe rounded-full" style={{ padding: 8 }}>
-            <FgMonogram className="h-11 w-auto text-gold sm:h-13" />
+          <div className="envelope-breathe rounded-full" style={{ padding: 10, background: 'radial-gradient(circle, rgba(201,168,119,0.12) 0%, transparent 70%)' }}>
+            <FgMonogram className="h-12 w-auto text-gold sm:h-14" />
           </div>
         </div>
       </div>
 
       {/* ===================== BELOW THE ENVELOPE ===================== */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] flex flex-col items-center gap-3">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] z-10 flex flex-col items-center gap-3">
         {/* "YOU ARE CORDIALLY INVITED" with flourishes ABOVE and BELOW */}
         {showInvited && stage === 'sealed' && (
           <div className="animate-fade flex flex-col items-center gap-2" style={{ animationDuration: '1.2s' }}>
