@@ -281,7 +281,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
                 transition: 'opacity 1000ms ease 400ms'
               }}
             >
-              <FgMonogram halo="#ead9bf" className="h-16 w-auto sm:h-20" />
+              <FgMonogram halo="#ead9bf" blend="multiply" className="h-16 w-auto sm:h-20" />
               <p className="mt-3 text-[9px] uppercase tracking-widest2 text-[#7a5c39] sm:text-[10px]">
                 The wedding of
               </p>
