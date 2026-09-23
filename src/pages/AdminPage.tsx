@@ -673,7 +673,11 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
     reload()
   }
 
-  if (!items) return <p className="text-sm text-ink/60">Loading…</p>
+  if (!items) {
+    return status
+      ? <p role="alert" className="text-sm text-rose-300">{status}</p>
+      : <p className="text-sm text-ink/60">Loading…</p>
+  }
 
   return (
     <div>
@@ -690,7 +694,7 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
           multiple
           className="sr-only"
           onChange={(e) => {
-            if (e.target.files) uploadFiles(e.target.files)
+            if (e.target.files) uploadFiles(e.target.files).catch(() => {})
             e.target.value = ''
           }}
         />
@@ -853,7 +857,11 @@ function EventsTab({ passcode, slug }: { passcode: string; slug: string }) {
     reload()
   }
 
-  if (!events) return <p className="text-sm text-ink/60">Loading…</p>
+  if (!events) {
+    return status
+      ? <p role="alert" className="text-sm text-rose-300">{status}</p>
+      : <p className="text-sm text-ink/60">Loading…</p>
+  }
 
   return (
     <div>
@@ -1054,7 +1062,11 @@ function RegistryTab({ passcode, slug }: { passcode: string; slug: string }) {
     reload()
   }
 
-  if (!items) return <p className="text-sm text-ink/60">Loading…</p>
+  if (!items) {
+    return status
+      ? <p role="alert" className="text-sm text-rose-300">{status}</p>
+      : <p className="text-sm text-ink/60">Loading…</p>
+  }
 
   return (
     <div>
