@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import AdminPage from './pages/AdminPage'
 import InvitationPage from './pages/InvitationPage'
 import NotFoundPage from './pages/NotFound'
 
@@ -14,6 +15,8 @@ export default function App() {
         element={DEFAULT_SLUG ? <Navigate to={`/invite/${DEFAULT_SLUG}`} replace /> : <Navigate to="/invite/sample-wedding" replace />}
       />
       <Route path="/invite/:slug" element={<InvitationPage />} />
+      {/* Admin-only guest manager (passcode-gated at the RPC level). */}
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

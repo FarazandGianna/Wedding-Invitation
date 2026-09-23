@@ -10,6 +10,8 @@
  *  5. RSVP invalid status           — server rejects with INVALID_STATUS
  *  6. Unauthenticated rsvps SELECT  — empty result (guest privacy holds)
  *  7. submit_rsvp on unknown slug   — INVITATION_NOT_FOUND
+ *  8. admin RPC passcode gate       — wrong passcode rejected, right one ok
+ *  9. admin guest list + summary    — shape of the admin dashboard data
  *
  * Cleanup: deletes rows it created via the service-role key read from
  * SUPABASE_SERVICE_ROLE_KEY in .env.local (gitignored) when present.
@@ -167,6 +169,26 @@ async function rpc(fn, body) {
     p_message: null
   })
   check('unknown slug rejected', status === 400 && text.includes('INVITATION_NOT_FOUND'), text.slice(0, 80))
+}
+
+// 8/9. Admin RPCs: passcode gate + guest list/summary shape
+{
+  const adminPass = env.ADMIN_PASSCODE
+  if (adminPass) {
+    const bad = await rpc('admin_verify', { p_passcode: 'definitely-wrong' })
+    check('admin rejects wrong passcode', bad.status === 400 && bad.text.includes('ADMIN_BAD_PASSCODE'), bad.text.slice(0, 60))
+
+    const good = await rpc('admin_verify', { p_passcode: adminPass })
+    check('admin accepts correct passcode', good.status === 200 && good.json?.ok === true, `status ${good.status}`)
+
+    const list = await rpc('admin_list_rsvps', { p_passcode: adminPass, p_slug: SLUG })
+    check('admin guest list returns array', list.status === 200 && Array.isArray(list.json), `status ${list.status}`)
+
+    const sum = await rpc('admin_summary', { p_passcode: adminPass, p_slug: SLUG })
+    check('admin summary has counts', sum.status === 200 && typeof sum.json?.total_guests === 'number', `total_guests=${sum.json?.total_guests}`)
+  } else {
+    console.log('SKIP admin tests — ADMIN_PASSCODE not set in .env.local')
+  }
 }
 
 // Cleanup (best-effort): delete rows created by this run.

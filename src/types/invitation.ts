@@ -44,8 +44,28 @@ export interface GalleryItem {
   id: string
   invitation_id: string
   storage_path: string
+  image_url?: string | null
   alt_text: string | null
   sort_order: number
+}
+
+export interface AdminRsvpRow {
+  id: string
+  full_name: string
+  phone: string | null
+  attendance_status: 'attending' | 'not_attending'
+  guest_count: number | null
+  message: string | null
+  submitted_at: string
+  updated_at: string
+}
+
+export interface AdminSummary {
+  attending_parties: number
+  declined_parties: number
+  total_guests: number
+  rsvp_enabled: boolean
+  rsvp_deadline: string | null
 }
 
 export type AttendanceStatus = 'attending' | 'not_attending'

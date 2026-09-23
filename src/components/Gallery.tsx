@@ -8,7 +8,11 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
       items.map((item) => ({
         id: item.id,
         alt: item.alt_text || 'Wedding photo',
-        url: supabase.storage.from('gallery').getPublicUrl(item.storage_path).data.publicUrl
+        // Admin-added items carry a direct image_url; bucket items resolve
+        // through storage.
+        url:
+          item.image_url ||
+          supabase.storage.from('gallery').getPublicUrl(item.storage_path).data.publicUrl
       })),
     [items]
   )
