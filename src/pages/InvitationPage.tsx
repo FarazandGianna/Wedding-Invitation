@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import CoupleMessage from '../components/CoupleMessage'
 import Countdown from '../components/Countdown'
+import EnvelopeIntro from '../components/EnvelopeIntro'
 import EventDetails from '../components/EventDetails'
 import Footer from '../components/Footer'
 import Gallery from '../components/Gallery'
 import Hero from '../components/Hero'
 import Nav from '../components/Nav'
-import OpeningAnimation from '../components/OpeningAnimation'
 import RSVPForm from '../components/RSVPForm'
 import Venue from '../components/Venue'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
@@ -15,14 +15,26 @@ import { isSectionEnabled, useInvitation } from '../hooks/useInvitation'
 import { applyInvitationMeta } from '../utils/meta'
 import NotFoundPage from './NotFound'
 
+// First-visit gate for the envelope experience: sessionStorage survives
+// reloads in the same tab but resets for each new visit, so guests get the
+// full experience on every fresh open without it blocking their navigation.
+const SEEN_KEY = 'fg-intro-seen'
+
 export default function InvitationPage() {
   const { slug } = useParams<{ slug: string }>()
   const state = useInvitation(slug)
-  const [openingDone, setOpeningDone] = useState(false)
+  const [introDone, setIntroDone] = useState(
+    () => typeof window !== 'undefined' && window.sessionStorage.getItem(SEEN_KEY) === '1'
+  )
 
   useEffect(() => {
     if (state.status === 'ready') applyInvitationMeta(state.invitation)
   }, [state])
+
+  const finishIntro = () => {
+    window.sessionStorage.setItem(SEEN_KEY, '1')
+    setIntroDone(true)
+  }
 
   // Distinct, actionable state for a deployment missing its env vars — much
   // better than a scary network error pointing guests at their connection.
@@ -49,9 +61,6 @@ export default function InvitationPage() {
   }
 
   const ready = state.status === 'ready'
-  const names = ready ? `${state.invitation.bride_name} & ${state.invitation.groom_name}` : ''
-  const initialLeft = ready ? state.invitation.bride_name.charAt(0).toUpperCase() : ''
-  const initialRight = ready ? state.invitation.groom_name.charAt(0).toUpperCase() : ''
 
   const navItems = ready
     ? [
@@ -64,18 +73,19 @@ export default function InvitationPage() {
 
   return (
     <>
-      {!openingDone && (
-        <OpeningAnimation
-          names={names || 'Loading…'}
-          initialLeft={initialLeft || '?'}
-          initialRight={initialRight || '?'}
-          ready={ready}
-          onDone={() => setOpeningDone(true)}
-        />
-      )}
+      {/* The envelope opens while data loads; the card (stage 2) waits for the
+          real record, so guests always see true names/date/venue. */}
+      {!introDone && <EnvelopeIntro invitation={ready ? state.invitation : null} onFinished={finishIntro} />}
 
-      {ready && openingDone && (
-        <div className="min-h-screen bg-paper">
+      {ready && (
+        <div
+          className="min-h-screen bg-paper"
+          style={{
+            opacity: introDone ? 1 : 0,
+            transition: 'opacity 1200ms ease'
+          }}
+          aria-hidden={!introDone}
+        >
           <Nav items={navItems} />
           <Hero invitation={state.invitation} />
           {isSectionEnabled(state.sections, 'message') && <CoupleMessage invitation={state.invitation} />}

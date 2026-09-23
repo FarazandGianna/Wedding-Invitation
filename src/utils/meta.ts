@@ -17,13 +17,15 @@ export function applyInvitationMeta(invitation: Invitation) {
 
   // Absolute page URL so unfurlers can resolve the canonical share target.
   const pageUrl = window.location.href.split('#')[0]
+  // Default share image: the FG-monogram card rendered at build time.
+  const defaultOgImage = new URL('og-image.png', document.baseURI).href
   setMeta('description', description)
   setMeta('og:title', title, true)
   setMeta('og:description', description, true)
   setMeta('og:type', 'website', true)
   setMeta('og:url', pageUrl, true)
-  if (invitation.og_image_url) setMeta('og:image', invitation.og_image_url, true)
-  setMeta('twitter:card', invitation.og_image_url ? 'summary_large_image' : 'summary', true)
+  setMeta('og:image', invitation.og_image_url || defaultOgImage, true)
+  setMeta('twitter:card', 'summary_large_image', true)
   setMeta('twitter:title', title, true)
   setMeta('twitter:description', description, true)
 }

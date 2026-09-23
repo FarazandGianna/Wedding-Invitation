@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Invitation } from '../types/invitation'
+import FgMonogram from './FgMonogram'
 
 export default function Footer({ invitation }: { invitation: Invitation }) {
   const [copied, setCopied] = useState(false)
@@ -50,7 +51,8 @@ export default function Footer({ invitation }: { invitation: Invitation }) {
 
   return (
     <footer id="footer" className="border-t border-line/70 px-6 py-14 text-center">
-      <p className="font-display italic text-lg text-ink/70">
+      <FgMonogram className="mx-auto h-16 w-auto text-gold" />
+      <p className="mt-4 font-display italic text-lg text-ink/70">
         {invitation.bride_name} &amp; {invitation.groom_name}
       </p>
       <button

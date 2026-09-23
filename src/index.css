@@ -55,6 +55,36 @@ body {
   animation: gentle-fade 0.6s ease both;
 }
 
+/* ===== First-open envelope experience ===== */
+
+/* Slow candlelight-style breathing around the FG seal / clickable card.
+   Pure opacity, 4.6s cycle — reads as light, not as a notification. */
+@keyframes envelope-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.envelope-breathe {
+  animation: envelope-breathe 4.6s ease-in-out infinite;
+}
+
+/* "Click / Tap to open" cue: fades in and out alongside the golden light. */
+@keyframes cue-fade {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.95; }
+}
+
+.cue-fade {
+  animation: cue-fade 4.6s ease-in-out infinite;
+}
+
+/* Hero watermark: large, faint monogram behind the hero content. */
+.hero-watermark {
+  opacity: 0.055;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Focus visibility for accessibility */
 a:focus-visible,
 button:focus-visible,
