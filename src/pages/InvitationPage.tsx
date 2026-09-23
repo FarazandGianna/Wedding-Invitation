@@ -116,7 +116,7 @@ export default function InvitationPage() {
               that open a smooth modal overlay on click */}
           {(showItinerary || showRegistry) && (
             <section className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className={`grid gap-4 sm:grid-cols-2 ${(!showItinerary || !showRegistry) ? 'sm:grid-cols-1 sm:max-w-sm sm:mx-auto' : ''}`}>
                 {showItinerary && (
                   <button
                     type="button"
