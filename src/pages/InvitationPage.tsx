@@ -55,11 +55,11 @@ export default function InvitationPage() {
 
   const navItems = ready
     ? [
-        isSectionEnabled(state.sections, 'details') && { label: 'Details', href: '#details' },
-        isSectionEnabled(state.sections, 'venue') && { label: 'Location', href: '#location' },
-        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', href: '#gallery' },
-        isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', href: '#rsvp' }
-      ].filter((x): x is { label: string; href: string } => Boolean(x))
+        isSectionEnabled(state.sections, 'details') && { label: 'Details', targetId: 'details' },
+        isSectionEnabled(state.sections, 'venue') && { label: 'Location', targetId: 'location' },
+        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', targetId: 'gallery' },
+        isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', targetId: 'rsvp' }
+      ].filter((x): x is { label: string; targetId: string } => Boolean(x))
     : []
 
   return (

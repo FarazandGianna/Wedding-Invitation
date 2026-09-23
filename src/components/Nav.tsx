@@ -1,10 +1,14 @@
 interface NavItem {
   label: string
-  href: string
+  targetId: string
 }
 
 export default function Nav({ items }: { items: NavItem[] }) {
   if (items.length === 0) return null
+
+  function scrollTo(targetId: string) {
+    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <nav
@@ -12,15 +16,19 @@ export default function Nav({ items }: { items: NavItem[] }) {
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       aria-label="Invitation sections"
     >
+      {/* Buttons + programmatic scrolling instead of #anchor links: with
+          HashRouter the URL hash IS the route, so plain #section anchors
+          would be treated as navigation and hit the not-found page. */}
       <div className="flex gap-4 py-3 sm:gap-8">
         {items.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="whitespace-nowrap text-[11px] uppercase tracking-widest2 text-clay transition-colors hover:text-ink"
+          <button
+            key={item.targetId}
+            type="button"
+            onClick={() => scrollTo(item.targetId)}
+            className="whitespace-nowrap py-1 text-[11px] uppercase tracking-widest2 text-clay transition-colors hover:text-ink"
           >
             {item.label}
-          </a>
+          </button>
         ))}
       </div>
     </nav>

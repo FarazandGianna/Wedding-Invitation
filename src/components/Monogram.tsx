@@ -5,65 +5,68 @@ interface Props {
 }
 
 /**
- * Decorative oval frame with two intertwined initials, in the style of a
- * traditional engraved wedding monogram. Pure SVG (no external assets),
- * colored via currentColor so it inherits the gold accent everywhere it's
- * used.
+ * Intertwined two-initial monogram in the style of a traditional engraved
+ * wedding mark (see the couple's reference invitation): two large serif
+ * capitals sharing the oval's center, the front letter carrying a paper-toned
+ * halo so its strokes read as passing OVER the back letter — the same layered
+ * weaving as hand-engraved double monograms.
+ *
+ * Pure SVG (no external assets), colored via currentColor so it inherits the
+ * gold accent everywhere it's used.
  */
 export default function Monogram({ letterLeft, letterRight, className }: Props) {
   return (
     <svg viewBox="0 0 220 280" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      {/* outer flourish frame */}
+      {/* engraved oval frame with flourishes */}
       <g stroke="currentColor" strokeWidth="1.1" strokeLinecap="round">
-        <ellipse cx="110" cy="140" rx="72" ry="98" />
-        <ellipse cx="110" cy="140" rx="62" ry="88" strokeWidth="0.6" opacity="0.7" />
+        <ellipse cx="110" cy="140" rx="74" ry="100" />
+        <ellipse cx="110" cy="140" rx="64" ry="90" strokeWidth="0.6" opacity="0.7" />
 
         {/* top flourish */}
-        <path d="M110 42 C 100 30, 84 26, 74 34 C 66 40, 68 50, 78 52 C 70 46, 76 40, 84 42 C 92 44, 92 52, 84 56" />
-        <path d="M110 42 C 120 30, 136 26, 146 34 C 154 40, 152 50, 142 52 C 150 46, 144 40, 136 42 C 128 44, 128 52, 136 56" />
-        <path d="M96 36 Q110 24 124 36" strokeWidth="0.8" />
+        <path d="M110 40 C 100 28, 84 24, 74 32 C 66 38, 68 48, 78 50 C 70 44, 76 38, 84 40 C 92 42, 92 50, 84 54" />
+        <path d="M110 40 C 120 28, 136 24, 146 32 C 154 38, 152 48, 142 50 C 150 44, 144 38, 136 40 C 128 42, 128 50, 136 54" />
+        <path d="M96 34 Q110 22 124 34" strokeWidth="0.8" />
 
         {/* bottom flourish */}
-        <path d="M110 238 C 100 250, 84 254, 74 246 C 66 240, 68 230, 78 228 C 70 234, 76 240, 84 238 C 92 236, 92 228, 84 224" />
-        <path d="M110 238 C 120 250, 136 254, 146 246 C 154 240, 152 230, 142 228 C 150 234, 144 240, 136 238 C 128 236, 128 228, 136 224" />
-        <path d="M96 244 Q110 256 124 244" strokeWidth="0.8" />
+        <path d="M110 240 C 100 252, 84 256, 74 248 C 66 242, 68 232, 78 230 C 70 236, 76 242, 84 240 C 92 238, 92 230, 84 226" />
+        <path d="M110 240 C 120 252, 136 256, 146 248 C 154 242, 152 232, 142 230 C 150 236, 144 242, 136 240 C 128 238, 128 230, 136 226" />
+        <path d="M96 246 Q110 258 124 246" strokeWidth="0.8" />
 
         {/* side sprigs */}
-        <path d="M38 140 C 30 132, 30 120, 40 116 M40 116 C 36 122, 40 128, 46 126" strokeWidth="0.8" opacity="0.8" />
-        <path d="M182 140 C 190 132, 190 120, 180 116 M180 116 C 184 122, 180 128, 174 126" strokeWidth="0.8" opacity="0.8" />
-        <path d="M38 140 C 30 148, 30 160, 40 164 M40 164 C 36 158, 40 152, 46 154" strokeWidth="0.8" opacity="0.8" />
-        <path d="M182 140 C 190 148, 190 160, 180 164 M180 164 C 184 158, 180 152, 174 154" strokeWidth="0.8" opacity="0.8" />
-
-        {/* small corner dots */}
-        <circle cx="110" cy="34" r="1.4" fill="currentColor" />
-        <circle cx="110" cy="246" r="1.4" fill="currentColor" />
+        <path d="M36 140 C 28 132, 28 120, 38 116 M38 116 C 34 122, 38 128, 44 126" strokeWidth="0.8" opacity="0.8" />
+        <path d="M184 140 C 192 132, 192 120, 182 116 M182 116 C 186 122, 182 128, 176 126" strokeWidth="0.8" opacity="0.8" />
+        <path d="M36 140 C 28 148, 28 160, 38 164 M38 164 C 34 158, 38 152, 44 154" strokeWidth="0.8" opacity="0.8" />
+        <path d="M184 140 C 192 148, 192 160, 182 164 M182 164 C 186 158, 182 152, 176 154" strokeWidth="0.8" opacity="0.8" />
       </g>
 
-      {/* intertwined initials */}
-      <text
-        x="82"
-        y="158"
-        textAnchor="middle"
-        fontFamily="'Cormorant Garamond', Georgia, serif"
+      {/* the two initials, woven: the BACK letter is drawn first at full
+          opacity; the FRONT letter carries a page-colored stroke halo
+          (paint-order: stroke) so it visually overlaps and threads through
+          its partner, exactly like the engraved reference. */}
+      <g
+        fontFamily="'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif"
+        fontWeight="500"
         fontStyle="italic"
-        fontSize="64"
-        fill="currentColor"
-        opacity="0.96"
-      >
-        {letterLeft}
-      </text>
-      <text
-        x="140"
-        y="158"
         textAnchor="middle"
-        fontFamily="'Cormorant Garamond', Georgia, serif"
-        fontStyle="italic"
-        fontSize="64"
-        fill="currentColor"
       >
-        {letterRight}
-      </text>
-      <line x1="98" y1="112" x2="98" y2="176" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+        {/* back letter — sits slightly left and higher */}
+        <text x="99" y="196" fontSize="150" fill="currentColor">
+          {letterRight}
+        </text>
+        {/* front letter — slightly right and lower, haloed so it weaves over */}
+        <text
+          x="123"
+          y="204"
+          fontSize="150"
+          fill="currentColor"
+          stroke="var(--monogram-halo, #360b14)"
+          strokeWidth="7"
+          strokeLinejoin="round"
+          paintOrder="stroke"
+        >
+          {letterLeft}
+        </text>
+      </g>
     </svg>
   )
 }
