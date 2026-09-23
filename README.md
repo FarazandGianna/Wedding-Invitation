@@ -7,7 +7,8 @@ A database-driven digital wedding invitation. React + TypeScript + Vite + Tailwi
 - Vite + React 18 + TypeScript
 - Tailwind CSS
 - Supabase (Postgres + Row Level Security + Storage) via `@supabase/supabase-js`
-- React Router (`/invite/:slug` routing — supports multiple invitations)
+- React Router in hash mode (`/#/invite/:slug` — supports multiple invitations;
+  hash URLs work on every static host with no rewrite rules)
 
 ## 1. Set up Supabase
 
@@ -56,9 +57,6 @@ Outputs to `dist/`. Deploy `dist/` to any static host (Vercel, Netlify,
 Cloudflare Pages, GitHub Pages, etc.). Remember to set the same environment
 variables in your host's dashboard — they're baked in at build time.
 
-> If deploying to GitHub Pages, configure your host's rewrite/fallback rule
-> so all paths serve `index.html` (client-side routing), or GitHub Pages'
-> default 404 behavior for unknown paths.
 
 ## 5. Deploy (GitHub Pages with Actions)
 

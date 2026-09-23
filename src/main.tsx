@@ -1,16 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {/* basename lets deep links like /<repo>/invite/<slug> work when the app
-        is hosted at a sub-path (GitHub Pages project sites) while staying
-        "/" for root deployments and dev. */}
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    {/* Hash routing keeps every shareable URL at a 200 status on any static
+        host (GitHub Pages project sites have no rewrite rules, so path-based
+        deep links would otherwise 404). Guests share links like
+        /#invite/<slug>... i.e. /#/invite/<slug>, which always resolves. */}
+    <HashRouter>
       <App />
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 )
