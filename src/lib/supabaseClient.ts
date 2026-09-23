@@ -1,7 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL?.trim()
-const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
+// Treat empty strings (what CI passes when a secret/env var is absent) the
+// same as a missing value — otherwise createClient would throw at startup.
+const url = import.meta.env.VITE_SUPABASE_URL?.trim() || undefined
+const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || undefined
 
 function isUsableUrl(value: string | undefined): boolean {
   if (!value) return false
@@ -23,15 +25,15 @@ export const isSupabaseConfigured = Boolean(url && key && isUsableUrl(url))
 if (!isSupabaseConfigured) {
   // Fail loudly in dev rather than silently breaking every query.
   console.error(
-    'Supabase is not configured. Copy .env.example to .env and set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.'
+    'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY (see .env.example).'
   )
 }
 
 // When unconfigured we still create a client (against a harmless placeholder)
-// so imports never throw; every real request will simply fail with an error
-// the UI already handles.
+// so imports never throw; the UI shows the "not set up yet" screen and no
+// requests are made.
 export const supabase: SupabaseClient = createClient(
-  isSupabaseConfigured ? (url as string) : 'http://localhost',
+  isSupabaseConfigured ? (url as string) : 'https://placeholder.invalid',
   key ?? 'public-anon-key',
   {
     auth: { persistSession: false }
