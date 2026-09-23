@@ -1,0 +1,98 @@
+# Wedding Invitation
+
+A database-driven digital wedding invitation. React + TypeScript + Vite + Tailwind, backed by Supabase.
+
+## Stack
+
+- Vite + React 18 + TypeScript
+- Tailwind CSS
+- Supabase (Postgres + Row Level Security + Storage) via `@supabase/supabase-js`
+- React Router (`/invite/:slug` routing — supports multiple invitations)
+
+## 1. Set up Supabase
+
+1. Open your Supabase project's SQL editor.
+2. Run `supabase/migrations/0001_init.sql`. This creates the tables, RLS
+   policies, the `submit_rsvp` RPC, the public `gallery` storage bucket, and
+   seeds one example invitation (`sample-wedding`).
+3. Edit the `invitations` row (Table Editor → `invitations`) with your real
+   details, or insert a new row for your own wedding.
+4. To enable/disable a section (gallery, countdown, etc.) without touching
+   code, edit the matching row in `invitation_sections`.
+5. To add photos, upload images to the `gallery` storage bucket, then add a
+   row to `gallery_items` with the `storage_path` (the path inside the
+   bucket) and an `invitation_id`.
+
+## 2. Configure environment variables
+
+```
+cp .env.example .env
+```
+
+Fill in your Supabase project URL and **publishable** (anon) key — never the
+service-role key, which must never appear in frontend code.
+
+## 3. Run locally
+
+```
+npm install
+npm run dev
+npm test        # optional: runtime API tests against your live Supabase project
+```
+
+Visit `http://localhost:5173/invite/sample-wedding` (or whatever slug you
+used).
+
+If you only ever have one invitation and want `/` to open it directly, set
+`VITE_DEFAULT_INVITE_SLUG=your-slug` in `.env`.
+
+## 4. Build
+
+```
+npm run build
+```
+
+Outputs to `dist/`. Deploy `dist/` to any static host (Vercel, Netlify,
+Cloudflare Pages, GitHub Pages, etc.). Remember to set the same environment
+variables in your host's dashboard — they're baked in at build time.
+
+> If deploying to GitHub Pages, configure your host's rewrite/fallback rule
+> so all paths serve `index.html` (client-side routing), or GitHub Pages'
+> default 404 behavior for unknown paths.
+
+## 5. Deploy (GitHub Pages with Actions)
+
+This repo ships a workflow at `.github/workflows/deploy.yml`. To use it:
+
+1. Push the repository to GitHub.
+2. In the repo: **Settings → Pages → Build and deployment → Source**, choose
+   **GitHub Actions**.
+3. Add repository secrets (Settings → Secrets and variables → Actions):
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (publishable key
+   only — never the service-role key).
+4. Push to `main`; the site builds and deploys automatically.
+
+## Security notes
+
+- RLS is enabled on every table. The public can only read a **published**
+  invitation's public columns, its enabled sections, and its gallery.
+- Guests can never read other guests' RSVP rows — there is no public SELECT
+  policy on `rsvps`. Submissions go through the `submit_rsvp` RPC, which
+  validates the RSVP-open/deadline rules server-side (not just client-side)
+  and upserts on `(invitation_id, phone)` so a resubmission updates rather
+  than duplicates.
+- The frontend never uses a service-role key.
+
+## Project structure
+
+```
+src/
+  lib/supabaseClient.ts      single shared Supabase client
+  types/invitation.ts        shared TypeScript types
+  hooks/useInvitation.ts     data-access hook (invitation + sections + gallery)
+  hooks/useCountdown.ts      timezone-aware countdown
+  utils/                     validation, formatting, SEO meta
+  components/                Hero, Countdown, Venue, Gallery, RSVPForm, etc.
+  pages/InvitationPage.tsx   orchestrates loading/error/not-found/ready states
+supabase/migrations/0001_init.sql   full schema, RLS, RPC, storage bucket, seed row
+```

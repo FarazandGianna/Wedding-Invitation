@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+/* Smooth in-page navigation (Details / Location / Gallery / RSVP links);
+   auto-disabled by the reduced-motion block below. */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #360b14;
+  color: #f0e2d0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(201, 168, 119, 0.35);
+  color: #f0e2d0;
+}
+
+/* Respect reduced-motion preference globally */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gentle-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade {
+  animation: gentle-fade 0.6s ease both;
+}
+
+/* Focus visibility for accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #c9a877;
+  outline-offset: 2px;
+}
