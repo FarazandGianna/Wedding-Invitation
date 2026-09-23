@@ -1,16 +1,11 @@
 /**
- * Four-stage first-open experience inspired by the reference storyboard:
- *   1. Sealed envelope appears with gold monogram seal
- *   2. "YOU ARE CORDIALLY INVITED" shimmers in beneath the envelope
- *   3. Click → flap opens smoothly, card rises out
+ * Four-stage first-open experience matching the reference storyboard:
+ *   1. Sealed horizontal envelope appears with gold monogram seal on flap
+ *   2. "YOU ARE CORDIALLY INVITED" shimmers in BELOW the envelope with flourishes
+ *   3. Click → flap opens smoothly upward, card rises out
  *   4. Click card → dissolves into the real website
  *
- * Everything uses the site's palette (wine paper, warm gold, ink cream)
- * and the canonical FG monogram. Motion is slow and soft — no bounce, no
- * spin. `prefers-reduced-motion` collapses transforms, keeps the same flow.
- *
- * The invitation card (stage 3) only appears once the real database record
- * has loaded, so the card always shows the true names/date/venue.
+ * The card (stage 3) only appears once the real DB record has loaded.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Invitation } from '../types/invitation'
@@ -18,7 +13,6 @@ import { formatEventDate } from '../utils/format'
 import FgMonogram from './FgMonogram'
 
 interface Props {
-  /** Null until the invitation has loaded from Supabase. */
   invitation: Invitation | null
   onFinished: () => void
 }
@@ -26,12 +20,12 @@ interface Props {
 type Stage = 'sealed' | 'opening' | 'card' | 'entering'
 
 const TIMING = {
-  flapOpenMs: 1600, // flap lift after click 1 — slower, more cinematic
-  cardRiseMs: 1800, // card emerges after the flap
-  enterMs: 1400 // card → website dissolve after click 2
+  flapOpenMs: 1600,
+  cardRiseMs: 1800,
+  enterMs: 1400
 }
 
-const EASE_LUX = 'cubic-bezier(0.33, 0.02, 0.2, 1)' // soft, expensive feel
+const EASE_LUX = 'cubic-bezier(0.33, 0.02, 0.2, 1)'
 
 const isTouch =
   typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
@@ -59,7 +53,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
     [reduced]
   )
 
-  // Stage 2: "YOU ARE CORDIALLY INVITED" appears shortly after the envelope
+  // "YOU ARE CORDIALLY INVITED" appears below the envelope after a beat
   useEffect(() => {
     after(reduced ? 200 : 1200, () => setShowInvited(true))
   }, [reduced, after])
@@ -70,7 +64,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
     setStage('opening')
   }, [stage])
 
-  // The card rises only once the flap is open AND the data is ready
+  // Card rises once flap is open AND data is ready
   useEffect(() => {
     if (stage !== 'opening' || !invitation) return
     after(TIMING.flapOpenMs * 0.55, () => setStage('card'))
@@ -98,12 +92,12 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-paper"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-paper"
       role="dialog"
       aria-label="Wedding invitation"
       style={{ perspective: '1400px' }}
     >
-      {/* Soft atmospheric depth: gold ambiance behind the envelope */}
+      {/* Gold ambiance behind the envelope */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div
           className="absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -115,17 +109,18 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
         />
       </div>
 
-      {/* ======================== THE ENVELOPE ======================== */}
+      {/* ======================== ENVELOPE + CARD ======================== */}
       <div
         className="relative select-none"
         style={{
-          width: 'min(88vw, 560px)',
-          aspectRatio: '8 / 5.4',
+          width: 'min(88vw, 520px)',
+          /* Horizontal envelope: wider than tall, ~1.6:1 */
+          aspectRatio: '8 / 5',
           transform:
             stage === 'entering'
               ? 'translateZ(-90px) scale(0.96)'
               : onCard
-                ? 'translateZ(-70px) scale(0.98)'
+                ? 'translateZ(-60px) scale(0.98)'
                 : 'none',
           opacity: stage === 'entering' ? 0 : 1,
           transition: `transform ${TIMING.enterMs}ms ${EASE_LUX}, opacity ${TIMING.enterMs}ms ease`,
@@ -139,7 +134,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
         tabIndex={stage === 'sealed' ? 0 : undefined}
         aria-label={stage === 'sealed' ? 'Open the envelope' : undefined}
       >
-        {/* envelope body (back panel) */}
+        {/* Envelope body (back panel) */}
         <div
           className="absolute inset-0 rounded-[3px]"
           style={{
@@ -148,7 +143,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           }}
         />
 
-        {/* inner lining (becomes visible once the flap opens) */}
+        {/* Inner lining (visible once flap opens) */}
         <div
           className="absolute inset-x-[3%] top-[4%] bottom-[3%] rounded-[2px]"
           style={{
@@ -158,7 +153,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           }}
         />
 
-        {/* Card slide wrapper: clips the card while sealed/opening */}
+        {/* Card wrapper: clips card while sealed, unclips when card rises */}
         <div
           className="absolute inset-0"
           style={{
@@ -166,89 +161,87 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
             overflow: onCard || stage === 'entering' ? 'visible' : 'hidden'
           }}
         >
-        {/* the invitation card, sliding up out of the envelope */}
-        <div
-          className="absolute left-1/2 w-[82%] rounded-[2px]"
-          style={{
-            bottom: '6%',
-            height: '128%',
-            transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '17%' : '28%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
-            transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
-            pointerEvents: onCard ? 'auto' : 'none',
-            cursor: onCard ? 'pointer' : 'default'
-          }}
-          onClick={enterSite}
-          onKeyDown={(e) => {
-            if (onCard && (e.key === 'Enter' || e.key === ' ')) enterSite()
-          }}
-          role={onCard ? 'button' : undefined}
-          tabIndex={onCard ? 0 : undefined}
-          aria-label={onCard ? 'Continue to the invitation' : undefined}
-        >
-          {/* card paper */}
+          {/* The invitation card — portrait, slides up from inside */}
           <div
-            className="absolute inset-0 rounded-[2px] border border-line/60"
+            className="absolute left-1/2 rounded-[2px]"
             style={{
-              background: 'linear-gradient(170deg, #f3e7d3 0%, #ead9bf 60%, #e2cfae 100%)',
-              boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.55)'
+              /* Card is portrait, narrower than the envelope, taller */
+              width: '72%',
+              height: '155%',
+              bottom: '4%',
+              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '8%' : '30%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
+              transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
+              pointerEvents: onCard ? 'auto' : 'none',
+              cursor: onCard ? 'pointer' : 'default'
             }}
-          />
-          {/* ornate corner flourishes on the card */}
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            {/* Top-left corner */}
-            <svg className="absolute left-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
-              <path d="M2 2 C 12 2, 16 6, 18 14 C 14 8, 8 6, 2 6" />
-              <path d="M2 2 C 2 8, 4 12, 10 14 C 6 10, 4 6, 2 2" opacity="0.6" />
-            </svg>
-            {/* Top-right corner */}
-            <svg className="absolute right-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
-              <path d="M30 2 C 20 2, 16 6, 14 14 C 18 8, 24 6, 30 6" />
-              <path d="M30 2 C 30 8, 28 12, 22 14 C 26 10, 28 6, 30 2" opacity="0.6" />
-            </svg>
-            {/* Bottom-left corner */}
-            <svg className="absolute bottom-2 left-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
-              <path d="M2 30 C 12 30, 16 26, 18 18 C 14 24, 8 26, 2 26" />
-              <path d="M2 30 C 2 24, 4 20, 10 18 C 6 22, 4 26, 2 30" opacity="0.6" />
-            </svg>
-            {/* Bottom-right corner */}
-            <svg className="absolute bottom-2 right-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
-              <path d="M30 30 C 20 30, 16 26, 14 18 C 18 24, 24 26, 30 26" />
-              <path d="M30 30 C 30 24, 28 20, 22 18 C 26 22, 28 26, 30 30" opacity="0.6" />
-            </svg>
-          </div>
-          {/* card content — same identity as the website hero */}
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
-            style={{
-              opacity: onCard || stage === 'entering' ? 1 : 0,
-              transition: 'opacity 1000ms ease 400ms'
+            onClick={enterSite}
+            onKeyDown={(e) => {
+              if (onCard && (e.key === 'Enter' || e.key === ' ')) enterSite()
             }}
+            role={onCard ? 'button' : undefined}
+            tabIndex={onCard ? 0 : undefined}
+            aria-label={onCard ? 'Continue to the invitation' : undefined}
           >
-            <FgMonogram halo="#ead9bf" className="h-16 w-auto text-[#3c0d18] sm:h-20" />
-            <p className="mt-3 text-[9px] uppercase tracking-widest2 text-[#7a5c39] sm:text-[10px]">
-              The wedding of
-            </p>
-            <p className="mt-2 font-serif text-xl text-[#3c0d18] sm:text-3xl">{names}</p>
-            <div className="mt-3 h-px w-10 bg-[#8a6f52]/70" />
-            {dateLine && <p className="mt-3 font-serif text-sm text-[#5c4630] sm:text-base">{dateLine}</p>}
-            {venueLine && (
-              <p className="mt-1 text-[10px] uppercase tracking-widest2 text-[#7a5c39] sm:text-xs">
-                {venueLine}
+            {/* Card paper */}
+            <div
+              className="absolute inset-0 rounded-[2px] border border-line/60"
+              style={{
+                background: 'linear-gradient(170deg, #f3e7d3 0%, #ead9bf 60%, #e2cfae 100%)',
+                boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.55)'
+              }}
+            />
+            {/* Ornate corner flourishes */}
+            <div className="pointer-events-none absolute inset-0" aria-hidden>
+              <svg className="absolute left-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+                <path d="M2 2 C 12 2, 16 6, 18 14 C 14 8, 8 6, 2 6" />
+                <path d="M2 2 C 2 8, 4 12, 10 14 C 6 10, 4 6, 2 2" opacity="0.6" />
+              </svg>
+              <svg className="absolute right-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+                <path d="M30 2 C 20 2, 16 6, 14 14 C 18 8, 24 6, 30 6" />
+                <path d="M30 2 C 30 8, 28 12, 22 14 C 26 10, 28 6, 30 2" opacity="0.6" />
+              </svg>
+              <svg className="absolute bottom-2 left-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+                <path d="M2 30 C 12 30, 16 26, 18 18 C 14 24, 8 26, 2 26" />
+                <path d="M2 30 C 2 24, 4 20, 10 18 C 6 22, 4 26, 2 30" opacity="0.6" />
+              </svg>
+              <svg className="absolute bottom-2 right-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
+                <path d="M30 30 C 20 30, 16 26, 14 18 C 18 24, 24 26, 30 26" />
+                <path d="M30 30 C 30 24, 28 20, 22 18 C 26 22, 28 26, 30 30" opacity="0.6" />
+              </svg>
+            </div>
+            {/* Card content */}
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
+              style={{
+                opacity: onCard || stage === 'entering' ? 1 : 0,
+                transition: 'opacity 1000ms ease 400ms'
+              }}
+            >
+              <FgMonogram halo="#ead9bf" className="h-14 w-auto text-[#3c0d18] sm:h-16" />
+              <p className="mt-3 text-[9px] uppercase tracking-widest2 text-[#7a5c39] sm:text-[10px]">
+                The wedding of
               </p>
+              <p className="mt-2 font-serif text-xl text-[#3c0d18] sm:text-3xl">{names}</p>
+              <div className="mt-3 h-px w-10 bg-[#8a6f52]/70" />
+              {dateLine && <p className="mt-3 font-serif text-sm text-[#5c4630] sm:text-base">{dateLine}</p>}
+              {venueLine && (
+                <p className="mt-1 text-[10px] uppercase tracking-widest2 text-[#7a5c39] sm:text-xs">
+                  {venueLine}
+                </p>
+              )}
+            </div>
+            {/* Breathing gold cue when card is clickable */}
+            {onCard && (
+              <div
+                aria-hidden
+                className="envelope-breathe pointer-events-none absolute -inset-3 rounded-[4px]"
+                style={{ border: '1px solid rgba(201,168,119,0.55)' }}
+              />
             )}
           </div>
-          {/* breathing gold cue around the card once it's clickable */}
-          {onCard && (
-            <div
-              aria-hidden
-              className="envelope-breathe pointer-events-none absolute -inset-3 rounded-[4px]"
-              style={{ border: '1px solid rgba(201,168,119,0.55)' }}
-            />
-          )}
-        </div>
         </div>
 
-        {/* envelope pocket (front) — two side folds + bottom */}
+        {/* Envelope pocket (front) — side folds + bottom */}
         <div className="absolute inset-0" style={{ zIndex: 4, pointerEvents: 'none' }}>
           <div
             className="absolute inset-x-0 bottom-0 h-1/2 rounded-b-[3px]"
@@ -271,14 +264,13 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               clipPath: 'polygon(100% 0, 0 56%, 100% 100%)'
             }}
           />
-          {/* subtle depth at the pocket mouth */}
           <div
             className="absolute inset-x-0 bottom-0 h-1/2"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.18), transparent 55%)' }}
           />
         </div>
 
-        {/* the flap — rotates open around the top edge */}
+        {/* The flap — V-shape pointing down, rotates open upward */}
         <div
           className="absolute inset-x-0 top-0"
           style={{
@@ -301,12 +293,12 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           />
         </div>
 
-        {/* FG seal on the flap — gold, breathing candlelight */}
+        {/* Gold monogram seal — sits on the flap tip when closed, flies away when opened */}
         <div
           aria-hidden
           className="absolute left-1/2"
           style={{
-            top: '30%',
+            top: '38%',
             zIndex: 7,
             transform: `translateX(-50%) translateY(${envelopeOpen ? '-46%' : '0'}) rotateX(${envelopeOpen ? (reduced ? 8 : 172) : 0}deg)`,
             transformOrigin: 'top center',
@@ -315,23 +307,31 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           }}
         >
           <div className="envelope-breathe rounded-full" style={{ padding: 10 }}>
-            <FgMonogram className="h-14 w-auto text-gold sm:h-16" />
+            <FgMonogram className="h-12 w-auto text-gold sm:h-14" />
           </div>
         </div>
       </div>
 
-      {/* ===================== CUE TEXT ===================== */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] flex flex-col items-center gap-3">
-        {/* "YOU ARE CORDIALLY INVITED" — appears in stage 2 */}
+      {/* ===================== BELOW THE ENVELOPE ===================== */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-[12vh] flex flex-col items-center gap-4">
+        {/* "YOU ARE CORDIALLY INVITED" with flanking flourishes */}
         {showInvited && stage === 'sealed' && (
-          <p
-            className="animate-fade text-[11px] uppercase tracking-widest2 text-clay"
-            style={{ animationDuration: '1.2s' }}
-          >
-            You are cordially invited
-          </p>
+          <div className="animate-fade flex items-center gap-4" style={{ animationDuration: '1.2s' }}>
+            <svg width="40" height="8" viewBox="0 0 40 8" fill="none" stroke="currentColor" className="text-clay/60">
+              <path d="M0 4 C 10 4, 14 2, 20 4 C 26 6, 30 4, 40 4" strokeWidth="0.8" />
+              <circle cx="38" cy="4" r="1.5" fill="currentColor" stroke="none" />
+            </svg>
+            <p className="text-[11px] uppercase tracking-widest2 text-clay">
+              You are cordially invited
+            </p>
+            <svg width="40" height="8" viewBox="0 0 40 8" fill="none" stroke="currentColor" className="text-clay/60">
+              <path d="M40 4 C 30 4, 26 2, 20 4 C 14 6, 10 4, 0 4" strokeWidth="0.8" />
+              <circle cx="2" cy="4" r="1.5" fill="currentColor" stroke="none" />
+            </svg>
+          </div>
         )}
-        {/* TAP / CLICK cues */}
+
+        {/* Tap/click cues */}
         {stage === 'sealed' && (
           <p className="cue-fade text-[11px] uppercase tracking-widest2 text-clay/90">
             {isTouch ? 'Tap the envelope to open' : 'Click the envelope to open'}
