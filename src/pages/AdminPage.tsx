@@ -626,20 +626,27 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
       // 1. Upload the file directly to the Edge Function, which validates
       //    the admin passcode and uploads to storage using the service role key.
       const funcUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-gallery-photo`
-      const uploadRes = await fetch(funcUrl, {
-        method: 'POST',
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Content-Type': file.type,
-          'x-passcode': passcode,
-          'x-slug': slug,
-          'x-content-type': file.type,
-        },
-        body: file,
-      })
-      const uploadData = uploadRes.ok ? await uploadRes.json() : null
-      if (!uploadRes.ok || !uploadData) {
-        setStatus(`${file.name}: ${uploadData?.error || 'upload failed'}`)
+      let uploadData: { path?: string; publicUrl?: string; contentType?: string; error?: string } | null = null
+      try {
+        const uploadRes = await fetch(funcUrl, {
+          method: 'POST',
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': file.type,
+            'x-passcode': passcode,
+            'x-slug': slug,
+            'x-content-type': file.type,
+          },
+          body: file,
+        })
+        uploadData = uploadRes.ok ? await uploadRes.json() : null
+        if (!uploadRes.ok || !uploadData) {
+          setStatus(`${file.name}: ${uploadData?.error || `upload failed (${uploadRes.status})`}`)
+          setUploading(false)
+          return
+        }
+      } catch (err) {
+        setStatus(`${file.name}: ${err instanceof Error ? err.message : 'network error during upload'}`)
         setUploading(false)
         return
       }
