@@ -184,11 +184,13 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               className="absolute inset-0 rounded-[2px] border border-line/60"
               style={{
                 background: 'linear-gradient(170deg, #f3e7d3 0%, #ead9bf 60%, #e2cfae 100%)',
-                boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.55)'
+                boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.55)',
+                opacity: envelopeOpen ? 1 : 0,
+                transition: 'opacity 800ms ease 300ms'
               }}
             />
             {/* Ornate corner flourishes on the card */}
-            <div className="pointer-events-none absolute inset-0" aria-hidden>
+            <div className="pointer-events-none absolute inset-0" aria-hidden style={{ opacity: envelopeOpen ? 1 : 0, transition: 'opacity 800ms ease 300ms' }}>
               <svg className="absolute left-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
                 <path d="M2 2 C 12 2, 16 6, 18 14 C 14 8, 8 6, 2 6" />
                 <path d="M2 2 C 2 8, 4 12, 10 14 C 6 10, 4 6, 2 2" opacity="0.6" />
