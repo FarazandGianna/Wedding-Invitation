@@ -68,7 +68,7 @@ export default function SubPageLayout({ children }: SubPageLayoutProps) {
   const navItems = ready
     ? ([
         ...state.pageSettings
-          .filter((ps) => ps.is_enabled)
+          .filter((ps) => ps.is_enabled && ps.page_type !== 'gallery')
           .sort((a, b) => a.sort_order - b.sort_order)
           .map((ps) => ({
             label: ps.button_label || (ps.page_type === 'faq' ? 'FAQ' : ps.page_type.charAt(0).toUpperCase() + ps.page_type.slice(1)),

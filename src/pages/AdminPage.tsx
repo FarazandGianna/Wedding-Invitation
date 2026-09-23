@@ -322,8 +322,9 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 interface FieldDef {
   key: string
   label: string
-  type: 'text' | 'date' | 'time' | 'datetime-local' | 'number' | 'checkbox' | 'textarea'
+  type: 'text' | 'date' | 'time' | 'datetime-local' | 'number' | 'checkbox' | 'textarea' | 'select'
   hint?: string
+  options?: { value: string; label: string }[]
 }
 
 const EDITABLE_FIELDS: FieldDef[] = [
@@ -332,7 +333,7 @@ const EDITABLE_FIELDS: FieldDef[] = [
   { key: 'invitation_title', label: 'Invitation title', type: 'text', hint: 'Line above the names, e.g. “Together with our families”' },
   { key: 'invitation_message', label: 'Couple message', type: 'textarea' },
   { key: 'tagline', label: 'Tagline', type: 'textarea', hint: 'Shown below the hero, e.g. “We are getting married and would love for you to join us…”' },
-  { key: 'font_style', label: 'Name font style', type: 'text', hint: '“cursive” (default, beautiful script) or “serif” (classic)' },
+  { key: 'font_style', label: 'Name font style', type: 'select', hint: 'Beautiful cursive (default) or classic serif', options: [{ value: 'cursive', label: 'Beautiful cursive' }, { value: 'serif', label: 'Classic serif' }] },
   { key: 'wedding_date', label: 'Wedding date', type: 'date' },
   { key: 'wedding_time', label: 'Wedding time', type: 'time', hint: 'Leave blank if the time is not decided yet' },
   { key: 'timezone', label: 'Timezone', type: 'text', hint: 'IANA name, e.g. Asia/Karachi' },
@@ -453,6 +454,17 @@ function DetailsTab({ passcode, slug }: { passcode: string; slug: string }) {
                   onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                   className={inputCls()}
                 />
+              ) : f.type === 'select' ? (
+                <select
+                  id={`f-${f.key}`}
+                  value={String(draft[f.key] ?? '')}
+                  onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                  className={inputCls()}
+                >
+                  {f.options?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               ) : (
                 <input
                   id={`f-${f.key}`}
