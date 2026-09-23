@@ -21,6 +21,7 @@ export interface Invitation {
   invitation_title: string | null
   invitation_message: string | null
   tagline: string | null
+  font_style: 'cursive' | 'serif'
   wedding_date: string // YYYY-MM-DD
   wedding_time: string | null // HH:MM:SS
   timezone: string
@@ -136,7 +137,7 @@ export interface AdminRegistryItem {
 
 export interface PageSettings {
   id: string
-  page_type: 'details' | 'venue' | 'faq'
+  page_type: 'details' | 'venue' | 'faq' | 'gallery'
   button_label: string | null
   page_title: string | null
   page_subtitle: string | null
@@ -146,7 +147,7 @@ export interface PageSettings {
 
 export interface PageItem {
   id: string
-  page_type: 'details' | 'venue'
+  page_type: 'details' | 'venue' | 'gallery'
   label: string
   value: string
   sort_order: number

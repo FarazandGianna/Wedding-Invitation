@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import type { GalleryItem } from '../types/invitation'
+import type { GalleryItem, PageSettings } from '../types/invitation'
+import SubPageLayout from './SubPage'
 
 interface GalleryMedia {
   id: string
@@ -91,61 +92,80 @@ function MediaTile({
   )
 }
 
-export default function Gallery({ items }: { items: GalleryItem[] }) {
+function GalleryContent({
+  gallery,
+  pageSettings,
+}: {
+  gallery: GalleryItem[]
+  pageSettings: PageSettings[]
+}) {
   const [featuredId, setFeaturedId] = useState<string | null>(null)
+
+  const gallerySetting = pageSettings.find((ps) => ps.page_type === 'gallery')
+  const pageTitle = gallerySetting?.page_title || 'Gallery'
+  const pageSubtitle = gallerySetting?.page_subtitle || 'A glimpse of our moments together.'
 
   const photos = useMemo<GalleryMedia[]>(
     () =>
-      items.map((item) => ({
+      gallery.map((item) => ({
         id: item.id,
         alt: item.alt_text || 'Wedding photo',
         isVideo: (item.content_type || '').startsWith('video/'),
         url: resolveMediaUrl(item),
       })),
-    [items]
+    [gallery]
   )
 
-  // Sort by sort_order, then by original order
   const sorted = useMemo(() => {
-    return [...items]
-      .map((item, i) => ({ item, media: photos[i], sortIndex: i }))
+    return [...gallery]
+      .map((item, i) => ({ item, media: photos[i] }))
       .sort((a, b) => a.item.sort_order - b.item.sort_order)
       .map((x) => x.media)
-  }, [items, photos])
+  }, [gallery, photos])
 
-  if (sorted.length === 0) return null
+  if (sorted.length === 0) {
+    return (
+      <div>
+        <p className="text-center text-xs uppercase tracking-widest2 text-clay">
+          {pageTitle}
+        </p>
+        {pageSubtitle && (
+          <p className="mt-3 text-center text-sm text-ink/60">{pageSubtitle}</p>
+        )}
+        <div className="mt-12 text-center">
+          <p className="font-serif text-lg text-ink/50">
+            Gallery coming soon — check back after the celebration.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
-  // Determine featured item: user-selected, or first by sort order
-  const featured =
-    sorted.find((m) => m.id === featuredId) || sorted[0]
-
-  // Thumbnails = everything except the featured item
+  const featured = sorted.find((m) => m.id === featuredId) || sorted[0]
   const thumbnails = sorted.filter((m) => m.id !== featured.id)
-
-  // Different layouts based on count
   const hasMultipleRows = thumbnails.length > 3
 
   return (
-    <section id="gallery" className="px-6 py-20 sm:py-28">
-      <p className="text-center text-xs uppercase tracking-widest2 text-clay">Gallery</p>
+    <div>
+      <p className="text-center text-xs uppercase tracking-widest2 text-clay">
+        {pageTitle}
+      </p>
+      {pageSubtitle && (
+        <p className="mt-3 text-center text-sm text-ink/60">{pageSubtitle}</p>
+      )}
 
       <div className="mx-auto mt-8 max-w-4xl">
         {thumbnails.length === 0 ? (
-          // Single item — just show it large
           <div className="overflow-hidden bg-paperDeep/50">
             <div className="aspect-[16/10] sm:aspect-[16/9]">
               <MediaTile media={featured} featured />
             </div>
           </div>
         ) : (
-          // Bento-style layout
-          <div className="grid gap-2 sm:gap-3 md:grid-cols-6 md:auto-rows-[120px]">
-            {/* Featured item — large, spans 4 cols and 3 rows on desktop */}
+          <div className="grid gap-2 sm:gap-3 md:grid-cols-6 md:auto-rows-[140px]">
             <div className="col-span-2 aspect-[4/3] md:col-span-4 md:row-span-3 md:aspect-auto">
               <MediaTile media={featured} featured />
             </div>
-
-            {/* Right column thumbnails — stack vertically next to featured */}
             {thumbnails.slice(0, 3).map((media) => (
               <div
                 key={media.id}
@@ -158,8 +178,6 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
                 />
               </div>
             ))}
-
-            {/* Bottom row thumbnails — fill remaining space */}
             {hasMultipleRows &&
               thumbnails.slice(3, 7).map((media) => (
                 <div
@@ -176,6 +194,16 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
           </div>
         )}
       </div>
-    </section>
+    </div>
+  )
+}
+
+export default function GalleryPage() {
+  return (
+    <SubPageLayout>
+      {({ gallery, pageSettings }) => (
+        <GalleryContent gallery={gallery} pageSettings={pageSettings} />
+      )}
+    </SubPageLayout>
   )
 }

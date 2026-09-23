@@ -8,7 +8,7 @@ import type { FaqItem, GalleryItem, Invitation, InvitationSection, PageItem, Pag
 // added later.
 const INVITATION_COLUMNS = [
   'id', 'slug', 'is_published', 'bride_name', 'groom_name', 'invitation_title',
-  'invitation_message', 'tagline',
+  'invitation_message', 'tagline', 'font_style',
   'wedding_date', 'wedding_time', 'timezone',
   'venue_name', 'venue_address', 'map_url', 'contact_name', 'contact_phone',
   'rsvp_enabled', 'rsvp_deadline', 'max_guests_per_rsvp', 'og_image_url'

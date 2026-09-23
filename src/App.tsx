@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AdminPage from './pages/AdminPage'
 import DetailsPage from './pages/DetailsPage'
 import FAQPage from './pages/FAQPage'
+import GalleryPage from './pages/GalleryPage'
 import InvitationPage from './pages/InvitationPage'
 import NotFoundPage from './pages/NotFound'
 import VenuePage from './pages/VenuePage'
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/invite/:slug/details" element={<DetailsPage />} />
       <Route path="/invite/:slug/venue" element={<VenuePage />} />
       <Route path="/invite/:slug/faq" element={<FAQPage />} />
+      <Route path="/invite/:slug/gallery" element={<GalleryPage />} />
       {/* Admin-only guest manager (passcode-gated at the RPC level). */}
       <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<NotFoundPage />} />

@@ -332,6 +332,7 @@ const EDITABLE_FIELDS: FieldDef[] = [
   { key: 'invitation_title', label: 'Invitation title', type: 'text', hint: 'Line above the names, e.g. “Together with our families”' },
   { key: 'invitation_message', label: 'Couple message', type: 'textarea' },
   { key: 'tagline', label: 'Tagline', type: 'textarea', hint: 'Shown below the hero, e.g. “We are getting married and would love for you to join us…”' },
+  { key: 'font_style', label: 'Name font style', type: 'text', hint: '“cursive” (default, beautiful script) or “serif” (classic)' },
   { key: 'wedding_date', label: 'Wedding date', type: 'date' },
   { key: 'wedding_time', label: 'Wedding time', type: 'time', hint: 'Leave blank if the time is not decided yet' },
   { key: 'timezone', label: 'Timezone', type: 'text', hint: 'IANA name, e.g. Asia/Karachi' },

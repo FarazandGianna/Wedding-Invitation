@@ -78,7 +78,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
   const envelopeOpen = stage !== 'sealed'
 
   const names = invitation
-    ? `${invitation.bride_name} & ${invitation.groom_name}`.toUpperCase()
+    ? `${invitation.bride_name} & ${invitation.groom_name}`
     : ''
   const dateLine = invitation
     ? formatEventDate(invitation.wedding_date, invitation.wedding_time, invitation.timezone)
@@ -285,7 +285,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               <p className="mt-3 text-[9px] uppercase tracking-widest2 text-[#7a5c39] sm:text-[10px]">
                 The wedding of
               </p>
-              <p className="mt-2 font-serif text-xl text-[#3c0d18] sm:text-3xl">{names}</p>
+              <p className={`mt-2 text-xl text-[#3c0d18] sm:text-3xl ${invitation?.font_style === 'serif' ? 'font-serif' : 'font-script'}`}>{names}</p>
               <div className="mt-3 h-px w-10 bg-[#8a6f52]/70" />
               {dateLine && <p className="mt-3 font-serif text-sm text-[#5c4630] sm:text-base">{dateLine}</p>}
               {venueLine && (
@@ -388,8 +388,8 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               <path d="M50 6 C 52 3, 54 3, 56 6 C 54 9, 52 9, 50 6" strokeWidth="0.6" />
               <path d="M64 6 C 66 3, 68 3, 70 6 C 68 9, 66 9, 64 6" strokeWidth="0.6" />
             </svg>
-            <p className="text-sm font-serif uppercase tracking-widest2 text-clay sm:text-base">
-              You are cordially invited
+            <p className={`text-lg text-clay sm:text-xl ${invitation?.font_style === 'serif' ? 'font-serif' : 'font-script'}`}>
+              You are invited
             </p>
             {/* Bottom flourish (mirror) */}
             <svg width="120" height="12" viewBox="0 0 120 12" fill="none" stroke="currentColor" className="text-clay/50">

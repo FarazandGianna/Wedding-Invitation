@@ -75,7 +75,7 @@ export default function SubPageLayout({ children }: SubPageLayoutProps) {
             route: ps.page_type as string | undefined,
             targetId: undefined as string | undefined
           })),
-        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', route: undefined, targetId: 'gallery' },
+        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', route: 'gallery', targetId: undefined },
         isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', route: undefined, targetId: 'rsvp' }
       ].filter(Boolean) as { label: string; route?: string; targetId?: string }[])
     : []

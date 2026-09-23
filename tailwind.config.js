@@ -6,7 +6,8 @@ export default {
       fontFamily: {
         serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
         display: ['"Cormorant"', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif']
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        script: ['"Great Vibes"', 'Georgia', 'cursive']
       },
       colors: {
         // "paper" is the page background — now a deep wine/burgundy instead

@@ -4,7 +4,6 @@ import CoupleMessage from '../components/CoupleMessage'
 import Countdown from '../components/Countdown'
 import EnvelopeIntro from '../components/EnvelopeIntro'
 import Footer from '../components/Footer'
-import Gallery from '../components/Gallery'
 import Hero from '../components/Hero'
 import Modal from '../components/Modal'
 import Nav from '../components/Nav'
@@ -75,7 +74,7 @@ export default function InvitationPage() {
             route: ps.page_type as string | undefined,
             targetId: undefined as string | undefined
           })),
-        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', route: undefined, targetId: 'gallery' },
+        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', route: 'gallery', targetId: undefined },
         isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', route: undefined, targetId: 'rsvp' }
       ].filter(Boolean) as { label: string; route?: string; targetId?: string }[])
     : []
@@ -144,7 +143,6 @@ export default function InvitationPage() {
             </section>
           )}
 
-          {isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && <Gallery items={state.gallery} />}
           {isSectionEnabled(state.sections, 'rsvp') && <RSVPForm invitation={state.invitation} />}
           <Footer invitation={state.invitation} />
 
