@@ -65,7 +65,7 @@ export function useInvitation(slug: string | undefined) {
           .order('sort_order', { ascending: true }),
         supabase
           .from('gallery_items')
-          .select('id, invitation_id, storage_path, image_url, alt_text, sort_order')
+          .select('id, invitation_id, storage_path, image_url, alt_text, content_type, sort_order')
           .eq('invitation_id', invitation.id)
           .order('sort_order', { ascending: true }),
         supabase

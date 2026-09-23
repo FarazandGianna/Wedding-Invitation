@@ -8,6 +8,7 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
       items.map((item) => ({
         id: item.id,
         alt: item.alt_text || 'Wedding photo',
+        isVideo: (item.content_type || '').startsWith('video/'),
         // Admin-added items carry a direct image_url; bucket items resolve
         // through storage.
         url:
@@ -25,13 +26,23 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
       <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         {photos.map((photo, i) => (
           <div key={photo.id} className="aspect-[3/4] overflow-hidden bg-line/40">
-            <img
-              src={photo.url}
-              alt={photo.alt}
-              loading={i < 3 ? 'eager' : 'lazy'}
-              decoding="async"
-              className="h-full w-full object-cover"
-            />
+            {photo.isVideo ? (
+              <video
+                src={photo.url}
+                controls
+                playsInline
+                preload="metadata"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src={photo.url}
+                alt={photo.alt}
+                loading={i < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            )}
           </div>
         ))}
       </div>

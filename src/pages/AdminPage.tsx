@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import type {
   AdminRsvpRow,
@@ -549,21 +549,32 @@ function SectionsTab({ passcode, slug }: { passcode: string; slug: string }) {
 /* ---------------------------------- gallery -------------------------------- */
 
 function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
-  const [items, setItems] = useState<{ id: string; image_url: string | null; alt_text: string | null; sort_order: number }[] | null>(null)
+  const [items, setItems] = useState<{ id: string; image_url: string | null; alt_text: string | null; content_type: string | null; sort_order: number }[] | null>(null)
   const [url, setUrl] = useState('')
   const [alt, setAlt] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Web-displayable images + videos. HEIC/HEIF are deliberately rejected —
+  // they don't render reliably across all guest browsers.
+  const ALLOWED_TYPES = new Set([
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/bmp', 'image/svg+xml',
+    'video/mp4', 'video/webm', 'video/quicktime'
+  ])
+  const MAX_BYTES = 50 * 1024 * 1024 // 50 MB (matches the storage bucket limit)
 
   const reload = useCallback(async () => {
     const inv = await supabase.from('invitations').select('id').eq('slug', slug).maybeSingle()
     if (!inv.data) return
     const { data } = await supabase
       .from('gallery_items')
-      .select('id, image_url, alt_text, sort_order')
+      .select('id, image_url, alt_text, content_type, sort_order')
       .eq('invitation_id', (inv.data as { id: string }).id)
       .order('sort_order')
-    setItems((data ?? []) as { id: string; image_url: string | null; alt_text: string | null; sort_order: number }[])
+    setItems((data ?? []) as { id: string; image_url: string | null; alt_text: string | null; content_type: string | null; sort_order: number }[])
   }, [slug])
 
   useEffect(() => {
@@ -591,6 +602,71 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
     reload()
   }
 
+  async function uploadFiles(files: FileList | File[]) {
+    const list = Array.from(files)
+    if (list.length === 0) return
+    setUploading(true)
+    setStatus(null)
+    let added = 0
+    for (const file of list) {
+      const msg = validateFile(file)
+      if (msg) {
+        setStatus(`${file.name}: ${msg}`)
+        setUploading(false)
+        return
+      }
+      // 1. Ask the Edge Function for a signed upload URL (validates the
+      //    admin passcode server-side — no public storage write access).
+      const { data: signData, error: signErr } = await supabase.functions.invoke(
+        'upload-gallery-photo',
+        { body: { passcode, slug, filename: file.name, contentType: file.type, size: file.size } }
+      )
+      if (signErr || !signData) {
+        setStatus(`${file.name}: ${signErr?.message || 'could not authorize upload'}`)
+        setUploading(false)
+        return
+      }
+      // 2. Upload the file directly to Supabase Storage via the signed URL.
+      const { error: upErr } = await supabase.storage
+        .from('gallery')
+        .uploadToSignedUrl(signData.path, signData.token, file, { contentType: file.type })
+      if (upErr) {
+        setStatus(`${file.name}: upload failed — ${upErr.message}`)
+        setUploading(false)
+        return
+      }
+      // 3. Record the gallery item (passcode-gated RPC).
+      const { error: rpcErr } = await supabase.rpc('admin_add_uploaded_gallery_item', {
+        p_passcode: passcode,
+        p_slug: slug,
+        p_storage_path: signData.path,
+        p_image_url: signData.publicUrl,
+        p_alt_text: file.name.replace(/\.[^.]+$/, ''),
+        p_content_type: signData.contentType,
+        p_sort_order: 0
+      })
+      if (rpcErr) {
+        setStatus(`${file.name}: ${rpcErr.message}`)
+        setUploading(false)
+        return
+      }
+      added++
+    }
+    setUploading(false)
+    setStatus(added > 0 ? `Uploaded ${added} item${added > 1 ? 's' : ''}.` : null)
+    reload()
+  }
+
+  function validateFile(file: File): string | null {
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return 'unsupported type — use JPG, PNG, WebP, GIF, BMP, SVG, MP4, WebM or MOV (HEIC not supported).'
+    }
+    if (file.size > MAX_BYTES) {
+      return `file is too large — max 50 MB (this one is ${(file.size / (1024 * 1024)).toFixed(1)} MB).`
+    }
+    return null
+  }
+
   async function remove(id: string) {
     if (!confirm('Remove this photo from the gallery?')) return
     await supabase.rpc('admin_delete_gallery_item', { p_passcode: passcode, p_item_id: id })
@@ -601,7 +677,40 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
 
   return (
     <div>
-      <p className="text-sm text-ink/60">
+      {/* Upload from device — opens the photo picker on iPhone/Android, the
+          file dialog on Windows. accept without `capture` lets users choose
+          between camera and gallery on mobile. */}
+      <div className="border border-dashed border-ink/30 bg-paperDeep/30 p-6 text-center">
+        <p className="text-sm text-ink/70">Upload photos from your device</p>
+        <p className="mt-1 text-[11px] text-ink/50">JPG, PNG, WebP, GIF, BMP, SVG, MP4, WebM or MOV — up to 50 MB each.</p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/svg+xml,video/mp4,video/webm,video/quicktime"
+          multiple
+          className="sr-only"
+          onChange={(e) => {
+            if (e.target.files) uploadFiles(e.target.files)
+            e.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="mt-4 min-h-11 border border-ink bg-ink px-8 py-3 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {uploading ? 'Uploading…' : 'Choose photos'}
+        </button>
+      </div>
+
+      <div className="mt-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-line/50" />
+        <span className="text-xs uppercase tracking-widest2 text-clay">or paste a link</span>
+        <div className="h-px flex-1 bg-line/50" />
+      </div>
+
+      <p className="mt-4 text-sm text-ink/60">
         Paste a public image URL (e.g. an upload to the Supabase <code>gallery</code> bucket or any photo host).
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_200px_auto]">
@@ -622,12 +731,22 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {items.map((it) => (
             <div key={it.id} className="group relative border border-line/70">
-              <img
-                src={it.image_url ?? ''}
-                alt={it.alt_text ?? 'Gallery photo'}
-                className="aspect-[3/4] w-full object-cover"
-                loading="lazy"
-              />
+              {(it.content_type || '').startsWith('video/') ? (
+                <video
+                  src={it.image_url ?? ''}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="aspect-[3/4] w-full object-cover"
+                />
+              ) : (
+                <img
+                  src={it.image_url ?? ''}
+                  alt={it.alt_text ?? 'Gallery photo'}
+                  className="aspect-[3/4] w-full object-cover"
+                  loading="lazy"
+                />
+              )}
               <button
                 type="button"
                 onClick={() => remove(it.id)}
