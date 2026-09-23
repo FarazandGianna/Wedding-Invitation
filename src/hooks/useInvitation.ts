@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import type { GalleryItem, Invitation, InvitationSection, RegistryItem, WeddingEvent } from '../types/invitation'
+import type { FaqItem, GalleryItem, Invitation, InvitationSection, PageItem, PageSettings, RegistryItem, WeddingEvent } from '../types/invitation'
 
 // Only the public-facing columns are selected — nothing admin-only lives on
 // this table, but keeping an explicit column list documents intent and
@@ -8,7 +8,8 @@ import type { GalleryItem, Invitation, InvitationSection, RegistryItem, WeddingE
 // added later.
 const INVITATION_COLUMNS = [
   'id', 'slug', 'is_published', 'bride_name', 'groom_name', 'invitation_title',
-  'invitation_message', 'wedding_date', 'wedding_time', 'timezone',
+  'invitation_message', 'tagline',
+  'wedding_date', 'wedding_time', 'timezone',
   'venue_name', 'venue_address', 'map_url', 'contact_name', 'contact_phone',
   'rsvp_enabled', 'rsvp_deadline', 'max_guests_per_rsvp', 'og_image_url'
 ].join(', ')
@@ -24,6 +25,9 @@ type State =
       gallery: GalleryItem[]
       events: WeddingEvent[]
       registry: RegistryItem[]
+      pageSettings: PageSettings[]
+      pageItems: PageItem[]
+      faqItems: FaqItem[]
     }
 
 export function useInvitation(slug: string | undefined) {
@@ -57,7 +61,7 @@ export function useInvitation(slug: string | undefined) {
         return
       }
 
-      const [{ data: sectionRows }, { data: galleryRows }, { data: eventRows, error: eventErr }, { data: registryRows, error: regErr }] = await Promise.all([
+      const [{ data: sectionRows }, { data: galleryRows }, { data: eventRows, error: eventErr }, { data: registryRows, error: regErr }, { data: pageSettingsRows, error: psErr }, { data: pageItemsRows, error: piErr }, { data: faqRows, error: faqErr }] = await Promise.all([
         supabase
           .from('invitation_sections')
           .select('section_key, is_enabled, sort_order')
@@ -77,6 +81,21 @@ export function useInvitation(slug: string | undefined) {
           .from('registry_items')
           .select('id, invitation_id, title, description, url, button_label, image_url, sort_order')
           .eq('invitation_id', invitation.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('page_settings')
+          .select('id, page_type, button_label, page_title, page_subtitle, is_enabled, sort_order')
+          .eq('invitation_id', invitation.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('page_items')
+          .select('id, page_type, label, value, sort_order')
+          .eq('invitation_id', invitation.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('faq_items')
+          .select('id, question, answer, sort_order')
+          .eq('invitation_id', invitation.id)
           .order('sort_order', { ascending: true })
       ])
 
@@ -86,6 +105,9 @@ export function useInvitation(slug: string | undefined) {
       // treat as empty arrays rather than crashing the whole page.
       const events = eventErr ? [] : (eventRows ?? []) as WeddingEvent[]
       const registry = regErr ? [] : (registryRows ?? []) as RegistryItem[]
+      const pageSettings = psErr ? [] : (pageSettingsRows ?? []) as PageSettings[]
+      const pageItems = piErr ? [] : (pageItemsRows ?? []) as PageItem[]
+      const faqItems = faqErr ? [] : (faqRows ?? []) as FaqItem[]
 
       const sections: Record<string, boolean> = {}
       for (const row of (sectionRows ?? []) as Pick<InvitationSection, 'section_key' | 'is_enabled'>[]) {
@@ -98,7 +120,10 @@ export function useInvitation(slug: string | undefined) {
         sections,
         gallery: (galleryRows ?? []) as GalleryItem[],
         events,
-        registry
+        registry,
+        pageSettings,
+        pageItems,
+        faqItems
       })
     }
 

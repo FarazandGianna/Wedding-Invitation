@@ -20,6 +20,7 @@ export interface Invitation {
   groom_name: string
   invitation_title: string | null
   invitation_message: string | null
+  tagline: string | null
   wedding_date: string // YYYY-MM-DD
   wedding_time: string | null // HH:MM:SS
   timezone: string
@@ -130,5 +131,45 @@ export interface AdminRegistryItem {
   url: string
   button_label: string
   image_url: string | null
+  sort_order: number
+}
+
+export interface PageSettings {
+  id: string
+  page_type: 'details' | 'venue' | 'faq'
+  button_label: string | null
+  page_title: string | null
+  page_subtitle: string | null
+  is_enabled: boolean
+  sort_order: number
+}
+
+export interface PageItem {
+  id: string
+  page_type: 'details' | 'venue'
+  label: string
+  value: string
+  sort_order: number
+}
+
+export interface FaqItem {
+  id: string
+  question: string
+  answer: string
+  sort_order: number
+}
+
+export interface AdminPageItem {
+  id: string
+  page_type: string
+  label: string
+  value: string
+  sort_order: number
+}
+
+export interface AdminFaqItem {
+  id: string
+  question: string
+  answer: string
   sort_order: number
 }

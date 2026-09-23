@@ -11,7 +11,7 @@ export default function Countdown({ invitation }: { invitation: Invitation }) {
   return (
     <section id="countdown" className="border-y border-line/70 bg-paperDeep/50 px-6 py-16 text-center sm:py-20">
       <p className="text-xs uppercase tracking-widest2 text-clay">
-        {isPast ? "We're celebrating" : 'Counting down to our wedding'}
+        {isPast ? "We're celebrating" : 'Our Forever Begins In:'}
       </p>
 
       {isPast ? (

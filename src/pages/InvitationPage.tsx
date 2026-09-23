@@ -3,16 +3,13 @@ import { useParams } from 'react-router-dom'
 import CoupleMessage from '../components/CoupleMessage'
 import Countdown from '../components/Countdown'
 import EnvelopeIntro from '../components/EnvelopeIntro'
-import EventDetails from '../components/EventDetails'
 import Footer from '../components/Footer'
 import Gallery from '../components/Gallery'
 import Hero from '../components/Hero'
-import Itinerary from '../components/Itinerary'
 import Modal from '../components/Modal'
 import Nav from '../components/Nav'
 import Registry from '../components/Registry'
 import RSVPForm from '../components/RSVPForm'
-import Venue from '../components/Venue'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 import { isSectionEnabled, useInvitation } from '../hooks/useInvitation'
 import { applyInvitationMeta } from '../utils/meta'
@@ -66,29 +63,25 @@ export default function InvitationPage() {
 
   const ready = state.status === 'ready'
 
-  const showItinerary = ready && isSectionEnabled(state.sections, 'itinerary') && state.events.length > 0
-  const showRegistry = ready && isSectionEnabled(state.sections, 'registry') && state.registry.length > 0
-
+  // Build nav items: sub-pages (Details, Venue, FAQ) from page_settings,
+  // plus RSVP and Gallery as scroll targets on the main page.
   const navItems = ready
-    ? [
-        isSectionEnabled(state.sections, 'details') && { label: 'Details', targetId: 'details' },
-        isSectionEnabled(state.sections, 'venue') && { label: 'Location', targetId: 'location' },
-        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', targetId: 'gallery' },
-        showItinerary && { label: 'Itinerary', targetId: 'itinerary' },
-        isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', targetId: 'rsvp' },
-        showRegistry && { label: 'Registry', targetId: 'registry' }
-      ].filter((x): x is { label: string; targetId: string } => Boolean(x))
+    ? ([
+        ...state.pageSettings
+          .filter((ps) => ps.is_enabled)
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((ps) => ({
+            label: ps.button_label || (ps.page_type === 'faq' ? 'FAQ' : ps.page_type.charAt(0).toUpperCase() + ps.page_type.slice(1)),
+            route: ps.page_type as string | undefined,
+            targetId: undefined as string | undefined
+          })),
+        isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && { label: 'Gallery', route: undefined, targetId: 'gallery' },
+        isSectionEnabled(state.sections, 'rsvp') && { label: 'RSVP', route: undefined, targetId: 'rsvp' }
+      ].filter(Boolean) as { label: string; route?: string; targetId?: string }[])
     : []
 
-  // Nav handler: Itinerary and Registry open modals, everything else scrolls
   function handleNav(targetId: string) {
-    if (targetId === 'itinerary') {
-      setOpenModal('itinerary')
-    } else if (targetId === 'registry') {
-      setOpenModal('registry')
-    } else {
-      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
@@ -106,86 +99,56 @@ export default function InvitationPage() {
           }}
           aria-hidden={!introDone}
         >
-          <Nav items={navItems} onNavigate={handleNav} />
+          <Nav items={navItems} onNavigate={handleNav} slug={slug} />
           <Hero invitation={state.invitation} />
+
+          {/* Tagline — admin-editable subtitle below the hero */}
+          {state.invitation.tagline && (
+            <section className="mx-auto max-w-2xl px-6 py-8 text-center sm:py-12">
+              <p className="font-serif text-lg leading-relaxed text-ink/80 sm:text-xl">
+                {state.invitation.tagline}
+              </p>
+            </section>
+          )}
+
           {isSectionEnabled(state.sections, 'message') && <CoupleMessage invitation={state.invitation} />}
           {isSectionEnabled(state.sections, 'countdown') && <Countdown invitation={state.invitation} />}
-          {isSectionEnabled(state.sections, 'details') && <EventDetails invitation={state.invitation} />}
 
-          {/* Itinerary & Registry — right below Details, as expandable cards
-              that open a smooth modal overlay on click */}
-          {(showItinerary || showRegistry) && (
+          {/* Registry card on the main page (if items exist) */}
+          {isSectionEnabled(state.sections, 'registry') && state.registry.length > 0 && (
             <section className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
-              <div className={`grid gap-4 sm:grid-cols-2 ${(!showItinerary || !showRegistry) ? 'sm:grid-cols-1 sm:max-w-sm sm:mx-auto' : ''}`}>
-                {showItinerary && (
-                  <button
-                    type="button"
-                    onClick={() => setOpenModal('itinerary')}
-                    className="group flex flex-col items-center justify-center border border-gold/40 bg-gold/5 px-6 py-10 text-center transition-all duration-300 hover:border-gold hover:bg-gold/10"
-                  >
-                    <svg className="mb-4 text-gold transition-transform duration-300 group-hover:scale-110" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" />
-                      <path d="M16 2v4M8 2v4M3 10h18" />
-                      <path d="M8 14h2M8 18h2M14 14h2M14 18h2" />
-                    </svg>
-                    <p className="text-xs uppercase tracking-widest2 text-clay">Pakistan Itinerary</p>
-                    <h3 className="mt-2 font-serif text-xl text-ink">Celebration Schedule</h3>
-                    <p className="mt-2 text-sm text-ink/60">
-                      {state.events.length} {state.events.length === 1 ? 'event' : 'events'} in Pakistan
-                    </p>
-                    <span className="mt-4 text-xs uppercase tracking-widest2 text-gold transition-colors group-hover:text-ink">
-                      View schedule →
-                    </span>
-                  </button>
-                )}
-
-                {showRegistry && (
-                  <button
-                    type="button"
-                    onClick={() => setOpenModal('registry')}
-                    className="group flex flex-col items-center justify-center border border-gold/40 bg-gold/5 px-6 py-10 text-center transition-all duration-300 hover:border-gold hover:bg-gold/10"
-                  >
-                    <svg className="mb-4 text-gold transition-transform duration-300 group-hover:scale-110" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 12V22H4V12" />
-                      <path d="M2 7h20v5H2z" />
-                      <path d="M12 22V7" />
-                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                    </svg>
-                    <p className="text-xs uppercase tracking-widest2 text-clay">Wedding Registry</p>
-                    <h3 className="mt-2 font-serif text-xl text-ink">Gifts &amp; Wishes</h3>
-                    <p className="mt-2 text-sm text-ink/60">
-                      {state.registry.length} {state.registry.length === 1 ? 'registry' : 'registries'}
-                    </p>
-                    <span className="mt-4 text-xs uppercase tracking-widest2 text-gold transition-colors group-hover:text-ink">
-                      View registry →
-                    </span>
-                  </button>
-                )}
+              <div className="grid grid-cols-1 sm:max-w-sm sm:mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setOpenModal('registry')}
+                  className="group flex flex-col items-center justify-center border border-gold/40 bg-gold/5 px-6 py-10 text-center transition-all duration-300 hover:border-gold hover:bg-gold/10"
+                >
+                  <svg className="mb-4 text-gold transition-transform duration-300 group-hover:scale-110" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 12V22H4V12" />
+                    <path d="M2 7h20v5H2z" />
+                    <path d="M12 22V7" />
+                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                  </svg>
+                  <p className="text-xs uppercase tracking-widest2 text-clay">Wedding Registry</p>
+                  <h3 className="mt-2 font-serif text-xl text-ink">Gifts &amp; Wishes</h3>
+                  <p className="mt-2 text-sm text-ink/60">
+                    {state.registry.length} {state.registry.length === 1 ? 'registry' : 'registries'}
+                  </p>
+                  <span className="mt-4 text-xs uppercase tracking-widest2 text-gold transition-colors group-hover:text-ink">
+                    View registry →
+                  </span>
+                </button>
               </div>
             </section>
           )}
 
-          {isSectionEnabled(state.sections, 'venue') && <Venue invitation={state.invitation} />}
           {isSectionEnabled(state.sections, 'gallery') && <Gallery items={state.gallery} />}
           {isSectionEnabled(state.sections, 'rsvp') && <RSVPForm invitation={state.invitation} />}
           <Footer invitation={state.invitation} />
 
-          {/* Itinerary modal */}
-          {showItinerary && (
-            <Modal
-              open={openModal === 'itinerary'}
-              onClose={() => setOpenModal(null)}
-              label="Pakistan Itinerary"
-              title="Celebration Schedule"
-              subtitle="Every event we are holding in Pakistan, in order."
-            >
-              <Itinerary events={state.events} />
-            </Modal>
-          )}
-
           {/* Registry modal */}
-          {showRegistry && (
+          {isSectionEnabled(state.sections, 'registry') && state.registry.length > 0 && (
             <Modal
               open={openModal === 'registry'}
               onClose={() => setOpenModal(null)}

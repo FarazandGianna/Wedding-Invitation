@@ -5,11 +5,14 @@ import type {
   AdminSummary,
   AdminWeddingEvent,
   AdminRegistryItem,
+  AdminPageItem,
+  AdminFaqItem,
   Invitation,
+  PageSettings,
   SectionKey
 } from '../types/invitation'
 
-type Tab = 'guests' | 'details' | 'sections' | 'gallery' | 'events' | 'registry'
+type Tab = 'guests' | 'details' | 'sections' | 'gallery' | 'events' | 'registry' | 'pages' | 'detail-items' | 'venue-items' | 'faq'
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   hero: 'Hero (names + date)',
@@ -141,7 +144,7 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
       </header>
 
       <nav className="mx-auto mt-6 flex max-w-5xl gap-2 overflow-x-auto border-b border-line/70">
-        {(['guests', 'details', 'sections', 'gallery', 'events', 'registry'] as Tab[]).map((t) => (
+        {(['guests', 'details', 'sections', 'pages', 'detail-items', 'venue-items', 'faq', 'gallery', 'events', 'registry'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -150,7 +153,7 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
               tab === t ? 'border-clay text-ink' : 'border-transparent text-clay hover:text-ink'
             }`}
           >
-            {t === 'guests' ? 'Guest list' : t === 'events' ? 'Events' : t === 'registry' ? 'Registry' : t}
+            {t === 'guests' ? 'Guest list' : t === 'events' ? 'Events' : t === 'registry' ? 'Registry' : t === 'pages' ? 'Pages' : t === 'detail-items' ? 'Detail Items' : t === 'venue-items' ? 'Venue Items' : t === 'faq' ? 'FAQ' : t}
           </button>
         ))}
       </nav>
@@ -159,6 +162,10 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
         {tab === 'guests' && <GuestsTab passcode={passcode} slug={slug} />}
         {tab === 'details' && <DetailsTab passcode={passcode} slug={slug} />}
         {tab === 'sections' && <SectionsTab passcode={passcode} slug={slug} />}
+        {tab === 'pages' && <PagesTab passcode={passcode} slug={slug} />}
+        {tab === 'detail-items' && <PageItemsTab passcode={passcode} slug={slug} pageType="details" title="Detail Items" description="Custom items for the Details page (e.g. Smoking: No smoking, Drinking: No drinking)." />}
+        {tab === 'venue-items' && <PageItemsTab passcode={passcode} slug={slug} pageType="venue" title="Venue Items" description="Custom items for the Venue page (e.g. Parking, Dress code, Accommodation)." />}
+        {tab === 'faq' && <FaqTab passcode={passcode} slug={slug} />}
         {tab === 'gallery' && <GalleryTab passcode={passcode} slug={slug} />}
         {tab === 'events' && <EventsTab passcode={passcode} slug={slug} />}
         {tab === 'registry' && <RegistryTab passcode={passcode} slug={slug} />}
@@ -324,6 +331,7 @@ const EDITABLE_FIELDS: FieldDef[] = [
   { key: 'groom_name', label: 'Groom name', type: 'text' },
   { key: 'invitation_title', label: 'Invitation title', type: 'text', hint: 'Line above the names, e.g. “Together with our families”' },
   { key: 'invitation_message', label: 'Couple message', type: 'textarea' },
+  { key: 'tagline', label: 'Tagline', type: 'textarea', hint: 'Shown below the hero, e.g. “We are getting married and would love for you to join us…”' },
   { key: 'wedding_date', label: 'Wedding date', type: 'date' },
   { key: 'wedding_time', label: 'Wedding time', type: 'time', hint: 'Leave blank if the time is not decided yet' },
   { key: 'timezone', label: 'Timezone', type: 'text', hint: 'IANA name, e.g. Asia/Karachi' },
@@ -1176,6 +1184,526 @@ function RegistryTab({ passcode, slug }: { passcode: string; slug: string }) {
       {items.length === 0 && !editing && (
         <p className="mt-8 text-center text-sm text-ink/60">
           No registry items yet. Add your first registry link.
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* --------------------------------- pages ----------------------------------- */
+
+const PAGE_TYPES = ['details', 'venue', 'faq'] as const
+const DEFAULT_LABELS: Record<string, string> = {
+  details: 'Details',
+  venue: 'Venue',
+  faq: 'FAQ'
+}
+const DEFAULT_TITLES: Record<string, string> = {
+  details: 'The Details',
+  venue: 'Venue',
+  faq: 'Frequently Asked Questions'
+}
+
+function PagesTab({ passcode, slug }: { passcode: string; slug: string }) {
+  const [settings, setSettings] = useState<PageSettings[] | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, { button_label: string; page_title: string; page_subtitle: string; is_enabled: boolean; sort_order: string }>>({})
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const reload = useCallback(async () => {
+    setStatus(null)
+    const { data, error } = await supabase.rpc('admin_list_page_settings', { p_passcode: passcode, p_slug: slug })
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    const rows = (data ?? []) as PageSettings[]
+    setSettings(rows)
+    const d: Record<string, { button_label: string; page_title: string; page_subtitle: string; is_enabled: boolean; sort_order: string }> = {}
+    for (const r of rows) {
+      d[r.page_type] = {
+        button_label: r.button_label ?? '',
+        page_title: r.page_title ?? '',
+        page_subtitle: r.page_subtitle ?? '',
+        is_enabled: r.is_enabled,
+        sort_order: String(r.sort_order)
+      }
+    }
+    setDrafts(d)
+  }, [passcode, slug])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  async function save(pageType: string) {
+    const d = drafts[pageType]
+    if (!d) return
+    setBusy(true)
+    setStatus(null)
+    const { error } = await supabase.rpc('admin_save_page_settings', {
+      p_passcode: passcode,
+      p_slug: slug,
+      p_page_type: pageType,
+      p_button_label: d.button_label.trim() || null,
+      p_page_title: d.page_title.trim() || null,
+      p_page_subtitle: d.page_subtitle.trim() || null,
+      p_is_enabled: d.is_enabled,
+      p_sort_order: parseInt(d.sort_order) || 0
+    })
+    setBusy(false)
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setStatus(`${pageType} settings saved.`)
+    reload()
+  }
+
+  if (!settings) return <p className="text-sm text-ink/60">Loading…</p>
+
+  const allTypes = PAGE_TYPES.map(pt => ({
+    page_type: pt,
+    draft: drafts[pt] ?? { button_label: '', page_title: '', page_subtitle: '', is_enabled: true, sort_order: '0' }
+  }))
+
+  return (
+    <div>
+      <p className="text-sm text-ink/60">Customize the nav button labels, page titles, and visibility for each sub-page.</p>
+      <div className="mt-6 space-y-8">
+        {allTypes.map(({ page_type, draft }) => (
+          <div key={page_type} className="border border-line/70 bg-paperDeep/30 p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif text-xl text-ink capitalize">{page_type}</h3>
+              <label className="flex cursor-pointer items-center gap-2">
+                <span className="text-xs uppercase tracking-widest2 text-clay">Enabled</span>
+                <input
+                  type="checkbox"
+                  checked={draft.is_enabled}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [page_type]: { ...draft, is_enabled: e.target.checked } }))}
+                  className="h-4 w-4 accent-[#c9a877]"
+                />
+              </label>
+            </div>
+            <div className="mt-4 grid gap-4">
+              <div>
+                <label className="mb-2 block text-xs uppercase tracking-widest2 text-clay">Button label</label>
+                <input
+                  type="text"
+                  value={draft.button_label}
+                  placeholder={DEFAULT_LABELS[page_type]}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [page_type]: { ...draft, button_label: e.target.value } }))}
+                  className={inputCls()}
+                />
+                <p className="mt-1 text-[11px] text-ink/50">Leave blank for default: {DEFAULT_LABELS[page_type]}</p>
+              </div>
+              <div>
+                <label className="mb-2 block text-xs uppercase tracking-widest2 text-clay">Page title</label>
+                <input
+                  type="text"
+                  value={draft.page_title}
+                  placeholder={DEFAULT_TITLES[page_type]}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [page_type]: { ...draft, page_title: e.target.value } }))}
+                  className={inputCls()}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs uppercase tracking-widest2 text-clay">Page subtitle</label>
+                <textarea
+                  rows={2}
+                  value={draft.page_subtitle}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [page_type]: { ...draft, page_subtitle: e.target.value } }))}
+                  className={inputCls()}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs uppercase tracking-widest2 text-clay">Sort order</label>
+                <input
+                  type="number"
+                  value={draft.sort_order}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [page_type]: { ...draft, sort_order: e.target.value } }))}
+                  className={inputCls()}
+                />
+                <p className="mt-1 text-[11px] text-ink/50">Lower appears first in the nav</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => save(page_type)}
+              disabled={busy}
+              className="mt-4 min-h-11 border border-ink bg-ink px-8 py-3 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? 'Saving…' : `Save ${page_type} settings`}
+            </button>
+          </div>
+        ))}
+      </div>
+      {status && <p className="mt-4 text-sm text-emerald-300">{status}</p>}
+    </div>
+  )
+}
+
+/* ------------------------------ page items --------------------------------- */
+
+const PAGE_ITEM_FIELDS: FieldDef[] = [
+  { key: 'label', label: 'Label', type: 'text', hint: 'e.g. Smoking, Drinking, Ceremony' },
+  { key: 'value', label: 'Value', type: 'text', hint: 'e.g. No smoking, No drinking, 6:00 PM' },
+  { key: 'sort_order', label: 'Sort order', type: 'number', hint: 'Lower appears first' }
+]
+
+function PageItemsTab({ passcode, slug, pageType, title, description }: { passcode: string; slug: string; pageType: string; title: string; description: string }) {
+  const [items, setItems] = useState<AdminPageItem[] | null>(null)
+  const [editing, setEditing] = useState<AdminPageItem | null>(null)
+  const [draft, setDraft] = useState<Record<string, string>>({})
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const reload = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_list_page_items', { p_passcode: passcode, p_slug: slug, p_page_type: pageType })
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setItems((data ?? []) as AdminPageItem[])
+  }, [passcode, slug, pageType])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  function startEdit(item: AdminPageItem | null) {
+    setEditing(item ?? ({} as AdminPageItem))
+    setStatus(null)
+    const d: Record<string, string> = {}
+    for (const f of PAGE_ITEM_FIELDS) {
+      const v = item ? (item as unknown as Record<string, unknown>)[f.key] : null
+      d[f.key] = v === null || v === undefined ? '' : String(v)
+    }
+    setDraft(d)
+  }
+
+  async function save() {
+    setBusy(true)
+    setStatus(null)
+    const payload: Record<string, unknown> = {}
+    for (const f of PAGE_ITEM_FIELDS) {
+      const str = String(draft[f.key] ?? '').trim()
+      payload[f.key] = str === '' ? null : str
+    }
+    if (!payload.label) {
+      setStatus('Label is required.')
+      setBusy(false)
+      return
+    }
+    const { error } = await supabase.rpc('admin_save_page_item', {
+      p_passcode: passcode,
+      p_slug: slug,
+      p_item_id: editing?.id ?? null,
+      p_page_type: pageType,
+      p_label: payload.label as string,
+      p_value: payload.value as string,
+      p_sort_order: parseInt(String(payload.sort_order)) || 0
+    })
+    setBusy(false)
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setEditing(null)
+    setStatus(editing ? 'Item updated.' : 'Item added.')
+    reload()
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Delete this item? This cannot be undone.')) return
+    await supabase.rpc('admin_delete_page_item', { p_passcode: passcode, p_item_id: id })
+    reload()
+  }
+
+  if (!items) {
+    return status
+      ? <p role="alert" className="text-sm text-rose-300">{status}</p>
+      : <p className="text-sm text-ink/60">Loading…</p>
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-ink/60">{description}</p>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => startEdit(null)}
+            className="min-h-10 border border-ink bg-ink px-5 py-2 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90"
+          >
+            Add item
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div className="mt-6 border border-line/70 bg-paperDeep/30 p-6">
+          <h3 className="font-serif text-xl text-ink">{editing?.id ? 'Edit item' : 'New item'}</h3>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {PAGE_ITEM_FIELDS.map((f) => (
+              <div key={f.key}>
+                <label htmlFor={`pi-${f.key}`} className="mb-2 block text-xs uppercase tracking-widest2 text-clay">
+                  {f.label}
+                </label>
+                <input
+                  id={`pi-${f.key}`}
+                  type={f.type}
+                  value={String(draft[f.key] ?? '')}
+                  onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                  className={inputCls()}
+                />
+                {f.hint && <p className="mt-1 text-[11px] text-ink/50">{f.hint}</p>}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy}
+              className="min-h-11 border border-ink bg-ink px-8 py-3 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? 'Saving…' : 'Save item'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="min-h-11 border border-ink/20 px-6 py-3 text-xs uppercase tracking-widest2 text-ink transition-colors hover:bg-ink/10"
+            >
+              Cancel
+            </button>
+          </div>
+          {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}
+        </div>
+      )}
+
+      {status && !editing && <p className="mt-4 text-sm text-emerald-300">{status}</p>}
+
+      {items.length > 0 && !editing && (
+        <div className="mt-6 space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-start justify-between gap-4 border border-line/40 px-5 py-4">
+              <div>
+                <p className="font-serif text-lg text-ink">{item.label}</p>
+                <p className="mt-1 text-sm text-clay">{item.value}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEdit(item)}
+                  className="text-xs uppercase tracking-widest2 text-clay hover:text-ink"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(item.id)}
+                  className="text-xs uppercase tracking-widest2 text-rose-300 hover:text-rose-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {items.length === 0 && !editing && (
+        <p className="mt-8 text-center text-sm text-ink/60">
+          No items yet. Add your first one.
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ---------------------------------- faq ------------------------------------ */
+
+const FAQ_FIELDS: FieldDef[] = [
+  { key: 'question', label: 'Question', type: 'text' },
+  { key: 'answer', label: 'Answer', type: 'textarea' },
+  { key: 'sort_order', label: 'Sort order', type: 'number', hint: 'Lower appears first' }
+]
+
+function FaqTab({ passcode, slug }: { passcode: string; slug: string }) {
+  const [items, setItems] = useState<AdminFaqItem[] | null>(null)
+  const [editing, setEditing] = useState<AdminFaqItem | null>(null)
+  const [draft, setDraft] = useState<Record<string, string>>({})
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const reload = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_list_faq_items', { p_passcode: passcode, p_slug: slug })
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setItems((data ?? []) as AdminFaqItem[])
+  }, [passcode, slug])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  function startEdit(item: AdminFaqItem | null) {
+    setEditing(item ?? ({} as AdminFaqItem))
+    setStatus(null)
+    const d: Record<string, string> = {}
+    for (const f of FAQ_FIELDS) {
+      const v = item ? (item as unknown as Record<string, unknown>)[f.key] : null
+      d[f.key] = v === null || v === undefined ? '' : String(v)
+    }
+    setDraft(d)
+  }
+
+  async function save() {
+    setBusy(true)
+    setStatus(null)
+    const payload: Record<string, unknown> = {}
+    for (const f of FAQ_FIELDS) {
+      const str = String(draft[f.key] ?? '').trim()
+      payload[f.key] = str === '' ? null : str
+    }
+    if (!payload.question) {
+      setStatus('Question is required.')
+      setBusy(false)
+      return
+    }
+    const { error } = await supabase.rpc('admin_save_faq_item', {
+      p_passcode: passcode,
+      p_slug: slug,
+      p_item_id: editing?.id ?? null,
+      p_question: payload.question as string,
+      p_answer: payload.answer as string,
+      p_sort_order: parseInt(String(payload.sort_order)) || 0
+    })
+    setBusy(false)
+    if (error) {
+      setStatus(error.message)
+      return
+    }
+    setEditing(null)
+    setStatus(editing ? 'FAQ item updated.' : 'FAQ item added.')
+    reload()
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Delete this FAQ item? This cannot be undone.')) return
+    await supabase.rpc('admin_delete_faq_item', { p_passcode: passcode, p_item_id: id })
+    reload()
+  }
+
+  if (!items) {
+    return status
+      ? <p role="alert" className="text-sm text-rose-300">{status}</p>
+      : <p className="text-sm text-ink/60">Loading…</p>
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-ink/60">Manage the FAQ items shown on the FAQ page.</p>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => startEdit(null)}
+            className="min-h-10 border border-ink bg-ink px-5 py-2 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90"
+          >
+            Add FAQ
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div className="mt-6 border border-line/70 bg-paperDeep/30 p-6">
+          <h3 className="font-serif text-xl text-ink">{editing?.id ? 'Edit FAQ item' : 'New FAQ item'}</h3>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {FAQ_FIELDS.map((f) => (
+              <div key={f.key} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                <label htmlFor={`faq-${f.key}`} className="mb-2 block text-xs uppercase tracking-widest2 text-clay">
+                  {f.label}
+                </label>
+                {f.type === 'textarea' ? (
+                  <textarea
+                    id={`faq-${f.key}`}
+                    rows={3}
+                    value={String(draft[f.key] ?? '')}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                    className={inputCls()}
+                  />
+                ) : (
+                  <input
+                    id={`faq-${f.key}`}
+                    type={f.type}
+                    value={String(draft[f.key] ?? '')}
+                    onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                    className={inputCls()}
+                  />
+                )}
+                {f.hint && <p className="mt-1 text-[11px] text-ink/50">{f.hint}</p>}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy}
+              className="min-h-11 border border-ink bg-ink px-8 py-3 text-xs uppercase tracking-widest2 text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? 'Saving…' : 'Save FAQ'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="min-h-11 border border-ink/20 px-6 py-3 text-xs uppercase tracking-widest2 text-ink transition-colors hover:bg-ink/10"
+            >
+              Cancel
+            </button>
+          </div>
+          {status && <p className="mt-3 text-sm text-rose-300">{status}</p>}
+        </div>
+      )}
+
+      {status && !editing && <p className="mt-4 text-sm text-emerald-300">{status}</p>}
+
+      {items.length > 0 && !editing && (
+        <div className="mt-6 space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="flex items-start justify-between gap-4 border border-line/40 px-5 py-4">
+              <div>
+                <p className="font-serif text-lg text-ink">{item.question}</p>
+                <p className="mt-1 text-xs text-ink/60 line-clamp-2">{item.answer}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEdit(item)}
+                  className="text-xs uppercase tracking-widest2 text-clay hover:text-ink"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(item.id)}
+                  className="text-xs uppercase tracking-widest2 text-rose-300 hover:text-rose-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {items.length === 0 && !editing && (
+        <p className="mt-8 text-center text-sm text-ink/60">
+          No FAQ items yet. Add your first question.
         </p>
       )}
     </div>
