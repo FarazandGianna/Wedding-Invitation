@@ -166,7 +166,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
               width: '70%',
               height: '160%',
               bottom: '3%',
-              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '6%' : '32%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
+              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '6%' : '45%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
               transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
               pointerEvents: onCard ? 'auto' : 'none',
               cursor: onCard ? 'pointer' : 'default'
