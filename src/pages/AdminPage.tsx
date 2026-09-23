@@ -623,34 +623,32 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
         setUploading(false)
         return
       }
-      // 1. Ask the Edge Function for a signed upload URL (validates the
-      //    admin passcode server-side — no public storage write access).
-      const { data: signData, error: signErr } = await supabase.functions.invoke(
+      // 1. Upload the file directly to the Edge Function, which validates
+      //    the admin passcode and uploads to storage using the service role key.
+      const { data: uploadData, error: uploadErr } = await supabase.functions.invoke(
         'upload-gallery-photo',
-        { body: { passcode, slug, filename: file.name, contentType: file.type, size: file.size } }
+        {
+          body: file,
+          headers: {
+            'x-passcode': passcode,
+            'x-slug': slug,
+            'x-content-type': file.type,
+          },
+        }
       )
-      if (signErr || !signData) {
-        setStatus(`${file.name}: ${signErr?.message || 'could not authorize upload'}`)
+      if (uploadErr || !uploadData) {
+        setStatus(`${file.name}: ${uploadErr?.message || 'upload failed'}`)
         setUploading(false)
         return
       }
-      // 2. Upload the file directly to Supabase Storage via the signed URL.
-      const { error: upErr } = await supabase.storage
-        .from('gallery')
-        .uploadToSignedUrl(signData.path, signData.token, file, { contentType: file.type })
-      if (upErr) {
-        setStatus(`${file.name}: upload failed — ${upErr.message}`)
-        setUploading(false)
-        return
-      }
-      // 3. Record the gallery item (passcode-gated RPC).
+      // 2. Record the gallery item (passcode-gated RPC).
       const { error: rpcErr } = await supabase.rpc('admin_add_uploaded_gallery_item', {
         p_passcode: passcode,
         p_slug: slug,
-        p_storage_path: signData.path,
-        p_image_url: signData.publicUrl,
+        p_storage_path: uploadData.path,
+        p_image_url: uploadData.publicUrl,
         p_alt_text: file.name.replace(/\.[^.]+$/, ''),
-        p_content_type: signData.contentType,
+        p_content_type: uploadData.contentType,
         p_sort_order: 0
       })
       if (rpcErr) {
