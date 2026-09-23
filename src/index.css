@@ -14,6 +14,7 @@ html, body, #root {
    auto-disabled by the reduced-motion block below. */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 60px;
 }
 
 body {

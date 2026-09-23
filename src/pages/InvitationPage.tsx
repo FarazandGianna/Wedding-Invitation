@@ -104,8 +104,9 @@ export default function InvitationPage() {
 
           {/* Tagline — admin-editable subtitle below the hero */}
           {state.invitation.tagline && (
-            <section className="mx-auto max-w-2xl px-6 py-8 text-center sm:py-12">
-              <p className="font-serif text-lg leading-relaxed text-ink/80 sm:text-xl">
+            <section className="mx-auto max-w-2xl px-6 py-12 text-center sm:py-16">
+              <div className="mx-auto mb-8 h-px w-12 bg-line" />
+              <p className="font-serif text-2xl leading-relaxed text-ink sm:text-3xl">
                 {state.invitation.tagline}
               </p>
             </section>

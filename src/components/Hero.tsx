@@ -4,7 +4,7 @@ import FgMonogram from './FgMonogram'
 
 export default function Hero({ invitation }: { invitation: Invitation }) {
   return (
-    <section id="invitation" className="flex min-h-[92vh] flex-col items-center justify-center px-6 text-center">
+    <section id="invitation" className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
       {/* Watermark: the FG mark echoes the envelope card behind the hero. */}
       <FgMonogram
         className="animate-fade-up h-40 w-auto sm:h-48"
