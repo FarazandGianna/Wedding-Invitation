@@ -140,13 +140,13 @@ function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: 
         </div>
       </header>
 
-      <nav className="mx-auto mt-6 flex max-w-5xl gap-2 border-b border-line/70">
+      <nav className="mx-auto mt-6 flex max-w-5xl gap-2 overflow-x-auto border-b border-line/70">
         {(['guests', 'details', 'sections', 'gallery', 'events', 'registry'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`-mb-px border-b-2 px-4 py-2 text-xs uppercase tracking-widest2 transition-colors ${
+            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-xs uppercase tracking-widest2 transition-colors sm:px-4 ${
               tab === t ? 'border-clay text-ink' : 'border-transparent text-clay hover:text-ink'
             }`}
           >
