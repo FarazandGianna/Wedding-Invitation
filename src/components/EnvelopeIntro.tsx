@@ -1,11 +1,11 @@
 /**
  * Four-stage first-open experience matching the reference storyboard:
- *   1. Sealed horizontal envelope appears with gold monogram seal on flap
- *   2. "YOU ARE CORDIALLY INVITED" shimmers in BELOW the envelope with flourishes
- *   3. Click → flap opens smoothly upward, card rises out
+ *   1. Sealed horizontal envelope with gold monogram seal on the flap tip
+ *   2. "YOU ARE CORDIALLY INVITED" appears below with flourishes above & below
+ *   3. Click → flap opens upward, card rises out from inside
  *   4. Click card → dissolves into the real website
  *
- * The card (stage 3) only appears once the real DB record has loaded.
+ * The card only appears once the real DB record has loaded.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Invitation } from '../types/invitation'
@@ -53,7 +53,6 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
     [reduced]
   )
 
-  // "YOU ARE CORDIALLY INVITED" appears below the envelope after a beat
   useEffect(() => {
     after(reduced ? 200 : 1200, () => setShowInvited(true))
   }, [reduced, after])
@@ -64,7 +63,6 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
     setStage('opening')
   }, [stage])
 
-  // Card rises once flap is open AND data is ready
   useEffect(() => {
     if (stage !== 'opening' || !invitation) return
     after(TIMING.flapOpenMs * 0.55, () => setStage('card'))
@@ -113,8 +111,8 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
       <div
         className="relative select-none"
         style={{
-          width: 'min(88vw, 520px)',
-          /* Horizontal envelope: wider than tall, ~1.6:1 */
+          width: 'min(86vw, 500px)',
+          /* Horizontal envelope ~1.6:1 */
           aspectRatio: '8 / 5',
           transform:
             stage === 'entering'
@@ -165,11 +163,10 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           <div
             className="absolute left-1/2 rounded-[2px]"
             style={{
-              /* Card is portrait, narrower than the envelope, taller */
-              width: '72%',
-              height: '155%',
-              bottom: '4%',
-              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '8%' : '30%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
+              width: '70%',
+              height: '160%',
+              bottom: '3%',
+              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '6%' : '32%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
               transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
               pointerEvents: onCard ? 'auto' : 'none',
               cursor: onCard ? 'pointer' : 'default'
@@ -190,7 +187,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
                 boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.55)'
               }}
             />
-            {/* Ornate corner flourishes */}
+            {/* Ornate corner flourishes on the card */}
             <div className="pointer-events-none absolute inset-0" aria-hidden>
               <svg className="absolute left-2 top-2 h-8 w-8 text-[#8a6f52]/50" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="0.8">
                 <path d="M2 2 C 12 2, 16 6, 18 14 C 14 8, 8 6, 2 6" />
@@ -270,11 +267,11 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           />
         </div>
 
-        {/* The flap — V-shape pointing down, rotates open upward */}
+        {/* The flap — V-shape pointing down when closed, rotates up when opened */}
         <div
           className="absolute inset-x-0 top-0"
           style={{
-            height: '56%',
+            height: '55%',
             zIndex: envelopeOpen ? 2 : 6,
             transformOrigin: 'top center',
             transform: `rotateX(${envelopeOpen ? (reduced ? 8 : 172) : 0}deg)`,
@@ -293,12 +290,12 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           />
         </div>
 
-        {/* Gold monogram seal — sits on the flap tip when closed, flies away when opened */}
+        {/* Gold monogram seal — centered on the flap tip when closed */}
         <div
           aria-hidden
           className="absolute left-1/2"
           style={{
-            top: '38%',
+            top: '40%',
             zIndex: 7,
             transform: `translateX(-50%) translateY(${envelopeOpen ? '-46%' : '0'}) rotateX(${envelopeOpen ? (reduced ? 8 : 172) : 0}deg)`,
             transformOrigin: 'top center',
@@ -306,27 +303,33 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
             opacity: envelopeOpen ? 0 : 1
           }}
         >
-          <div className="envelope-breathe rounded-full" style={{ padding: 10 }}>
-            <FgMonogram className="h-12 w-auto text-gold sm:h-14" />
+          <div className="envelope-breathe rounded-full" style={{ padding: 8 }}>
+            <FgMonogram className="h-11 w-auto text-gold sm:h-13" />
           </div>
         </div>
       </div>
 
       {/* ===================== BELOW THE ENVELOPE ===================== */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[12vh] flex flex-col items-center gap-4">
-        {/* "YOU ARE CORDIALLY INVITED" with flanking flourishes */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] flex flex-col items-center gap-3">
+        {/* "YOU ARE CORDIALLY INVITED" with flourishes ABOVE and BELOW */}
         {showInvited && stage === 'sealed' && (
-          <div className="animate-fade flex items-center gap-4" style={{ animationDuration: '1.2s' }}>
-            <svg width="40" height="8" viewBox="0 0 40 8" fill="none" stroke="currentColor" className="text-clay/60">
-              <path d="M0 4 C 10 4, 14 2, 20 4 C 26 6, 30 4, 40 4" strokeWidth="0.8" />
-              <circle cx="38" cy="4" r="1.5" fill="currentColor" stroke="none" />
+          <div className="animate-fade flex flex-col items-center gap-2" style={{ animationDuration: '1.2s' }}>
+            {/* Top flourish */}
+            <svg width="120" height="12" viewBox="0 0 120 12" fill="none" stroke="currentColor" className="text-clay/50">
+              <path d="M0 6 C 20 6, 30 2, 50 6 C 60 8, 70 6, 90 6 C 100 6, 110 4, 120 6" strokeWidth="0.8" />
+              <circle cx="60" cy="6" r="1.5" fill="currentColor" stroke="none" />
+              <path d="M50 6 C 52 3, 54 3, 56 6 C 54 9, 52 9, 50 6" strokeWidth="0.6" />
+              <path d="M64 6 C 66 3, 68 3, 70 6 C 68 9, 66 9, 64 6" strokeWidth="0.6" />
             </svg>
             <p className="text-[11px] uppercase tracking-widest2 text-clay">
               You are cordially invited
             </p>
-            <svg width="40" height="8" viewBox="0 0 40 8" fill="none" stroke="currentColor" className="text-clay/60">
-              <path d="M40 4 C 30 4, 26 2, 20 4 C 14 6, 10 4, 0 4" strokeWidth="0.8" />
-              <circle cx="2" cy="4" r="1.5" fill="currentColor" stroke="none" />
+            {/* Bottom flourish (mirror) */}
+            <svg width="120" height="12" viewBox="0 0 120 12" fill="none" stroke="currentColor" className="text-clay/50">
+              <path d="M0 6 C 20 6, 30 10, 50 6 C 60 4, 70 6, 90 6 C 100 6, 110 8, 120 6" strokeWidth="0.8" />
+              <circle cx="60" cy="6" r="1.5" fill="currentColor" stroke="none" />
+              <path d="M50 6 C 52 3, 54 3, 56 6 C 54 9, 52 9, 50 6" strokeWidth="0.6" />
+              <path d="M64 6 C 66 3, 68 3, 70 6 C 68 9, 66 9, 64 6" strokeWidth="0.6" />
             </svg>
           </div>
         )}
