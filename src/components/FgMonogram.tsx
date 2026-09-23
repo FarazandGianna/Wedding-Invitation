@@ -18,7 +18,7 @@ interface Props {
 export default function FgMonogram({ className, halo: _halo }: Props) {
   return (
     <img
-      src="/monogram.png"
+      src={`${import.meta.env.BASE_URL}monogram.png`}
       alt=""
       className={className}
       aria-hidden="true"
