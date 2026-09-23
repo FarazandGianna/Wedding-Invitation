@@ -811,7 +811,7 @@ function EventsTab({ passcode, slug }: { passcode: string; slug: string }) {
   }, [reload])
 
   function startEdit(event: AdminWeddingEvent | null) {
-    setEditing(event)
+    setEditing(event ?? ({} as AdminWeddingEvent))
     setStatus(null)
     const d: Record<string, string> = {}
     for (const f of EVENT_FIELDS) {
@@ -880,7 +880,7 @@ function EventsTab({ passcode, slug }: { passcode: string; slug: string }) {
 
       {editing && (
         <div className="mt-6 border border-line/70 bg-paperDeep/30 p-6">
-          <h3 className="font-serif text-xl text-ink">{editing ? 'Edit event' : 'New event'}</h3>
+          <h3 className="font-serif text-xl text-ink">{editing?.id ? 'Edit event' : 'New event'}</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {EVENT_FIELDS.map((f) => (
               <div key={f.key} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
@@ -1012,7 +1012,7 @@ function RegistryTab({ passcode, slug }: { passcode: string; slug: string }) {
   }, [reload])
 
   function startEdit(item: AdminRegistryItem | null) {
-    setEditing(item)
+    setEditing(item ?? ({} as AdminRegistryItem))
     setStatus(null)
     const d: Record<string, string> = {}
     for (const f of REGISTRY_FIELDS) {
@@ -1085,7 +1085,7 @@ function RegistryTab({ passcode, slug }: { passcode: string; slug: string }) {
 
       {editing && (
         <div className="mt-6 border border-line/70 bg-paperDeep/30 p-6">
-          <h3 className="font-serif text-xl text-ink">{editing ? 'Edit registry item' : 'New registry item'}</h3>
+          <h3 className="font-serif text-xl text-ink">{editing?.id ? 'Edit registry item' : 'New registry item'}</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {REGISTRY_FIELDS.map((f) => (
               <div key={f.key} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
