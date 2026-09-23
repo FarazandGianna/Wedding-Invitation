@@ -725,8 +725,12 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
           multiple
           className="sr-only"
           onChange={(e) => {
-            if (e.target.files) uploadFiles(e.target.files).catch(() => {})
-            e.target.value = ''
+            if (e.target.files) {
+              const fileList = e.target.files
+              uploadFiles(fileList).catch(() => {}).finally(() => {
+                e.target.value = ''
+              })
+            }
           }}
         />
         <button
