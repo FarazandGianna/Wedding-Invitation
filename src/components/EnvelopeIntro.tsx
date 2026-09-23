@@ -111,7 +111,7 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
       <div
         className="relative select-none"
         style={{
-          width: 'min(86vw, 500px)',
+          width: 'min(82vw, 440px)',
           /* Horizontal envelope ~1.6:1 */
           aspectRatio: '8 / 5',
           transform:
@@ -163,10 +163,10 @@ export default function EnvelopeIntro({ invitation, onFinished }: Props) {
           <div
             className="absolute left-1/2 rounded-[2px]"
             style={{
-              width: '68%',
-              height: '175%',
+              width: '70%',
+              height: '155%',
               bottom: '3%',
-              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '2%' : '47%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
+              transform: `translateX(-50%) translateY(${onCard || stage === 'entering' ? '3%' : '47%'}) scale(${stage === 'entering' ? 1.05 : 1})`,
               transition: `transform ${TIMING.cardRiseMs}ms ${EASE_LUX}`,
               pointerEvents: onCard ? 'auto' : 'none',
               cursor: onCard ? 'pointer' : 'default'
