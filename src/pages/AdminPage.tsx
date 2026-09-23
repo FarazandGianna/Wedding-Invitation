@@ -679,6 +679,21 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
     reload()
   }
 
+  async function moveItem(id: string, direction: 'up' | 'down') {
+    if (!items) return
+    const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order)
+    const idx = sorted.findIndex((it) => it.id === id)
+    if (idx === -1) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= sorted.length) return
+    const item = sorted[idx]
+    const swap = sorted[swapIdx]
+    // Swap sort orders
+    await supabase.rpc('admin_update_gallery_sort', { p_passcode: passcode, p_item_id: item.id, p_sort_order: swap.sort_order })
+    await supabase.rpc('admin_update_gallery_sort', { p_passcode: passcode, p_item_id: swap.id, p_sort_order: item.sort_order })
+    reload()
+  }
+
   if (!items) {
     return status
       ? <p role="alert" className="text-sm text-rose-300">{status}</p>
@@ -738,34 +753,62 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
       {status && <p className="mt-3 text-sm text-emerald-300">{status}</p>}
 
       {items.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {items.map((it) => (
-            <div key={it.id} className="group relative border border-line/70">
-              {(it.content_type || '').startsWith('video/') ? (
-                <video
-                  src={it.image_url ?? ''}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="aspect-[3/4] w-full object-cover"
-                />
-              ) : (
-                <img
-                  src={it.image_url ?? ''}
-                  alt={it.alt_text ?? 'Gallery photo'}
-                  className="aspect-[3/4] w-full object-cover"
-                  loading="lazy"
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => remove(it.id)}
-                className="absolute right-2 top-2 border border-ink/30 bg-paper/90 px-2 py-1 text-[10px] uppercase tracking-widest2 text-rose-300 opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+        <div>
+          <p className="mb-3 text-xs text-ink/50">
+            The first item by sort order appears in the large highlighted spot. Use the arrows to reorder.
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {items.map((it, i) => (
+              <div key={it.id} className="group relative border border-line/70">
+                {(it.content_type || '').startsWith('video/') ? (
+                  <video
+                    src={it.image_url ?? ''}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={it.image_url ?? ''}
+                    alt={it.alt_text ?? 'Gallery photo'}
+                    className="aspect-[3/4] w-full object-cover"
+                    loading="lazy"
+                  />
+                )}
+                {i === 0 && (
+                  <span className="absolute left-2 top-2 border border-gold/50 bg-paper/90 px-2 py-0.5 text-[10px] uppercase tracking-widest2 text-gold">
+                    Featured
+                  </span>
+                )}
+                <div className="absolute right-2 top-2 flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveItem(it.id, 'up')}
+                    disabled={i === 0}
+                    className="border border-ink/30 bg-paper/90 px-2 py-0.5 text-[10px] uppercase tracking-widest2 text-ink/70 opacity-0 transition-opacity hover:text-ink disabled:opacity-30 group-hover:opacity-100"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveItem(it.id, 'down')}
+                    disabled={i === items.length - 1}
+                    className="border border-ink/30 bg-paper/90 px-2 py-0.5 text-[10px] uppercase tracking-widest2 text-ink/70 opacity-0 transition-opacity hover:text-ink disabled:opacity-30 group-hover:opacity-100"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(it.id)}
+                    className="border border-ink/30 bg-paper/90 px-2 py-0.5 text-[10px] uppercase tracking-widest2 text-rose-300 opacity-0 transition-opacity hover:text-rose-200 group-hover:opacity-100"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

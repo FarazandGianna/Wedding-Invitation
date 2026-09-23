@@ -144,7 +144,7 @@ export default function InvitationPage() {
             </section>
           )}
 
-          {isSectionEnabled(state.sections, 'gallery') && <Gallery items={state.gallery} />}
+          {isSectionEnabled(state.sections, 'gallery') && state.gallery.length > 0 && <Gallery items={state.gallery} />}
           {isSectionEnabled(state.sections, 'rsvp') && <RSVPForm invitation={state.invitation} />}
           <Footer invitation={state.invitation} />
 
