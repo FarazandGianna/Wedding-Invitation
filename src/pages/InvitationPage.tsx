@@ -105,7 +105,7 @@ export default function InvitationPage() {
           {state.invitation.tagline && (
             <section className="mx-auto max-w-2xl px-6 py-12 text-center sm:py-16">
               <div className="mx-auto mb-8 h-px w-12 bg-line" />
-              <p className="font-serif text-2xl leading-relaxed text-ink sm:text-3xl">
+              <p className={`text-2xl leading-relaxed text-ink sm:text-3xl ${state.invitation.font_style === 'serif' ? 'font-serif' : 'font-script'}`}>
                 {state.invitation.tagline}
               </p>
             </section>
