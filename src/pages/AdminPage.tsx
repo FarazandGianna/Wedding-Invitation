@@ -628,6 +628,7 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
       const funcUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-gallery-photo`
       let uploadData: { path?: string; publicUrl?: string; contentType?: string; error?: string } | null = null
       try {
+        const arrayBuffer = await file.arrayBuffer()
         const uploadRes = await fetch(funcUrl, {
           method: 'POST',
           headers: {
@@ -637,7 +638,7 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
             'x-slug': slug,
             'x-content-type': file.type,
           },
-          body: file,
+          body: arrayBuffer,
         })
         uploadData = uploadRes.ok ? await uploadRes.json() : null
         if (!uploadRes.ok || !uploadData) {
