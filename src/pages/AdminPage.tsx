@@ -625,19 +625,21 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
       }
       // 1. Upload the file directly to the Edge Function, which validates
       //    the admin passcode and uploads to storage using the service role key.
-      const { data: uploadData, error: uploadErr } = await supabase.functions.invoke(
-        'upload-gallery-photo',
-        {
-          body: file,
-          headers: {
-            'x-passcode': passcode,
-            'x-slug': slug,
-            'x-content-type': file.type,
-          },
-        }
-      )
-      if (uploadErr || !uploadData) {
-        setStatus(`${file.name}: ${uploadErr?.message || 'upload failed'}`)
+      const funcUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-gallery-photo`
+      const uploadRes = await fetch(funcUrl, {
+        method: 'POST',
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': file.type,
+          'x-passcode': passcode,
+          'x-slug': slug,
+          'x-content-type': file.type,
+        },
+        body: file,
+      })
+      const uploadData = uploadRes.ok ? await uploadRes.json() : null
+      if (!uploadRes.ok || !uploadData) {
+        setStatus(`${file.name}: ${uploadData?.error || 'upload failed'}`)
         setUploading(false)
         return
       }
