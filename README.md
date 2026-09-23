@@ -67,10 +67,12 @@ This repo ships a workflow at `.github/workflows/deploy.yml`. To use it:
 1. Push the repository to GitHub.
 2. In the repo: **Settings → Pages → Build and deployment → Source**, choose
    **GitHub Actions**.
-3. Add repository secrets (Settings → Secrets and variables → Actions):
-   `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (publishable key
-   only — never the service-role key).
-4. Push to `main`; the site builds and deploys automatically.
+3. Push to `main`; the site builds and deploys automatically.
+
+The Supabase URL and publishable key come from `.env.production`, which is
+committed — these two values are public by design (they ship in the app
+bundle to every visitor) and the database is protected by RLS. Never put
+real secrets (service-role keys, access tokens) in that file.
 
 ## Security notes
 
