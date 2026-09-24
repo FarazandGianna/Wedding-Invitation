@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom'
 import { isSectionEnabled } from '../hooks/useInvitation'
 import Itinerary from '../components/Itinerary'
 import { formatEventDate } from '../utils/format'

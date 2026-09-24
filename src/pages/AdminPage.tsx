@@ -1419,7 +1419,7 @@ const PAGE_ITEM_FIELDS: FieldDef[] = [
   { key: 'sort_order', label: 'Sort order', type: 'number', hint: 'Lower appears first' }
 ]
 
-function PageItemsTab({ passcode, slug, pageType, title, description }: { passcode: string; slug: string; pageType: string; title: string; description: string }) {
+function PageItemsTab({ passcode, slug, pageType, title: _title, description }: { passcode: string; slug: string; pageType: string; title: string; description: string }) {
   const [items, setItems] = useState<AdminPageItem[] | null>(null)
   const [editing, setEditing] = useState<AdminPageItem | null>(null)
   const [draft, setDraft] = useState<Record<string, string>>({})

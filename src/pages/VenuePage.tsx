@@ -1,10 +1,9 @@
-import { isSectionEnabled } from '../hooks/useInvitation'
 import SubPageLayout from './SubPage'
 
 export default function VenuePage() {
   return (
     <SubPageLayout>
-      {({ invitation, sections, pageSettings, pageItems }) => {
+      {({ invitation, pageSettings, pageItems }) => {
         const settings = pageSettings.find((ps) => ps.page_type === 'venue')
         const venueItems = pageItems.filter((pi) => pi.page_type === 'venue')
 
