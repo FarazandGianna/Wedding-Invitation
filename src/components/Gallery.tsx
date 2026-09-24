@@ -6,6 +6,7 @@ import GalleryLightbox, { type LightboxMedia } from './GalleryLightbox'
 interface GalleryMedia {
   id: string
   alt: string
+  title: string | null
   isVideo: boolean
   url: string
 }
@@ -69,6 +70,11 @@ function MediaCard({
           />
         )}
       </div>
+      {media.title && (
+        <p className="mt-2 px-1 text-center font-serif text-sm text-ink/70">
+          {media.title}
+        </p>
+      )}
     </div>
   )
 }
@@ -81,6 +87,7 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
       items.map((item) => ({
         id: item.id,
         alt: item.alt_text || 'Wedding photo',
+        title: item.title,
         isVideo: (item.content_type || '').startsWith('video/'),
         url: resolveMediaUrl(item),
       })),

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export interface LightboxMedia {
   id: string
   alt: string
+  title: string | null
   isVideo: boolean
   url: string
 }
@@ -222,7 +223,12 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
         )}
 
         {/* Caption */}
-        <p className="mt-4 text-center text-xs uppercase tracking-widest2 text-clay/80">
+        {media.title && (
+          <p className="mt-3 text-center font-serif text-base text-ink/90">
+            {media.title}
+          </p>
+        )}
+        <p className="mt-2 text-center text-xs uppercase tracking-widest2 text-clay/80">
           {index + 1} / {items.length}
         </p>
       </div>

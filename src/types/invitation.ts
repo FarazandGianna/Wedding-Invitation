@@ -50,6 +50,7 @@ export interface GalleryItem {
   storage_path: string
   image_url?: string | null
   alt_text: string | null
+  title: string | null
   content_type: string | null
   sort_order: number
 }

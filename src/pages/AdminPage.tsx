@@ -570,9 +570,10 @@ function SectionsTab({ passcode, slug }: { passcode: string; slug: string }) {
 /* ---------------------------------- gallery -------------------------------- */
 
 function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
-  const [items, setItems] = useState<{ id: string; image_url: string | null; alt_text: string | null; content_type: string | null; sort_order: number }[] | null>(null)
+  const [items, setItems] = useState<{ id: string; image_url: string | null; alt_text: string | null; title: string | null; content_type: string | null; sort_order: number }[] | null>(null)
   const [url, setUrl] = useState('')
   const [alt, setAlt] = useState('')
+  const [title, setTitle] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -592,10 +593,10 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
     if (!inv.data) return
     const { data } = await supabase
       .from('gallery_items')
-      .select('id, image_url, alt_text, content_type, sort_order')
+      .select('id, image_url, alt_text, title, content_type, sort_order')
       .eq('invitation_id', (inv.data as { id: string }).id)
       .order('sort_order')
-    setItems((data ?? []) as { id: string; image_url: string | null; alt_text: string | null; content_type: string | null; sort_order: number }[])
+    setItems((data ?? []) as { id: string; image_url: string | null; alt_text: string | null; title: string | null; content_type: string | null; sort_order: number }[])
   }, [slug])
 
   useEffect(() => {
@@ -610,7 +611,8 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
       p_passcode: passcode,
       p_slug: slug,
       p_image_url: url.trim(),
-      p_alt_text: alt.trim() || null
+      p_alt_text: alt.trim() || null,
+      p_title: title.trim() || null
     })
     setBusy(false)
     if (error) {
@@ -619,6 +621,7 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
     }
     setUrl('')
     setAlt('')
+    setTitle('')
     setStatus('Photo added.')
     reload()
   }
@@ -672,6 +675,7 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
         p_image_url: uploadData.publicUrl,
         p_alt_text: file.name.replace(/\.[^.]+$/, ''),
         p_content_type: uploadData.contentType,
+        p_title: null,
         p_sort_order: 0
       })
       if (rpcErr) {
@@ -765,9 +769,10 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
       <p className="mt-4 text-sm text-ink/60">
         Paste a public image URL (e.g. an upload to the Supabase <code>gallery</code> bucket or any photo host).
       </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_200px_auto]">
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_150px_150px_auto]">
         <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/photo.jpg" className={inputCls()} />
-        <input value={alt} onChange={(e) => setAlt(e.target.value)} placeholder="Description (optional)" className={inputCls()} />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title (optional)" className={inputCls()} />
+        <input value={alt} onChange={(e) => setAlt(e.target.value)} placeholder="Alt text (optional)" className={inputCls()} />
         <button
           type="button"
           onClick={add}
@@ -833,6 +838,18 @@ function GalleryTab({ passcode, slug }: { passcode: string; slug: string }) {
                     ✕
                   </button>
                 </div>
+                <input
+                  type="text"
+                  defaultValue={it.title ?? ''}
+                  placeholder="Title…"
+                  onBlur={async (e) => {
+                    const val = e.target.value.trim()
+                    if (val === (it.title ?? '')) return
+                    await supabase.rpc('admin_update_gallery_title', { p_passcode: passcode, p_item_id: it.id, p_title: val })
+                    reload()
+                  }}
+                  className="w-full border-t border-line/40 bg-transparent px-2 py-1.5 text-xs text-ink outline-none placeholder:text-ink/30"
+                />
               </div>
             ))}
           </div>
