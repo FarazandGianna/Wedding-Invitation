@@ -78,11 +78,14 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
   const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Don't track swipes that start on video controls
+    // Clear any stale coordinates first
+    touchStart.current = null
+    // Don't track swipes that start on video controls or buttons
     const target = e.target as HTMLElement
     if (target.tagName === 'VIDEO' && target.hasAttribute('controls')) return
     if (target.closest('button')) return
     const t = e.touches[0]
+    if (!t) return
     touchStart.current = { x: t.clientX, y: t.clientY }
   }, [])
 
@@ -90,6 +93,10 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
     (e: React.TouchEvent) => {
       if (!touchStart.current || index === null) return
       const t = e.changedTouches[0]
+      if (!t) {
+        touchStart.current = null
+        return
+      }
       const dx = t.clientX - touchStart.current.x
       const dy = t.clientY - touchStart.current.y
       touchStart.current = null
@@ -131,12 +138,14 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
       onClick={handleBackdropClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => { touchStart.current = null }}
     >
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-ink/80 backdrop-blur-md transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           visible ? 'opacity-100' : 'opacity-0'
         }`}
+        onClick={onClose}
       />
 
       {/* Close button */}
