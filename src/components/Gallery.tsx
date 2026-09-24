@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import type { GalleryItem } from '../types/invitation'
+import GalleryLightbox, { type LightboxMedia } from './GalleryLightbox'
 
 interface GalleryMedia {
   id: string
@@ -16,83 +17,64 @@ function resolveMediaUrl(item: GalleryItem): string {
   )
 }
 
-function MediaTile({
+function MediaCard({
   media,
-  featured,
-  selected,
   onClick,
 }: {
   media: GalleryMedia
-  featured?: boolean
-  selected?: boolean
-  onClick?: () => void
+  onClick: () => void
 }) {
-  const baseClass = 'relative h-full w-full overflow-hidden bg-paperDeep/50'
-  const clickProps = onClick
-    ? {
-        role: 'button' as const,
-        tabIndex: 0,
-        onClick,
-        onKeyDown: (e: React.KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onClick()
-          }
-        },
-      }
-    : {}
-
   return (
     <div
-      className={`${baseClass} ${onClick ? 'cursor-pointer' : ''} ${
-        selected ? 'ring-2 ring-gold ring-offset-2 ring-offset-paper' : ''
-      }`}
-      {...clickProps}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
+      className="group mb-3 inline-block w-full cursor-pointer break-inside-avoid overflow-hidden rounded-2xl border border-line/10 bg-paperDeep/40 p-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.02] hover:border-gold/25 hover:bg-paperDeep/60 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.5)] focus:outline-none focus-visible:border-gold/40"
     >
-      {media.isVideo ? (
-        featured ? (
-          <video
-            src={media.url}
-            controls
-            playsInline
-            preload="metadata"
-            className="h-full w-full object-contain"
-          />
-        ) : (
+      <div className="relative overflow-hidden rounded-xl">
+        {media.isVideo ? (
           <>
             <video
               src={media.url}
               muted
               playsInline
               preload="metadata"
-              className="h-full w-full object-contain"
+              className="block w-full h-auto rounded-xl transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
             />
-            <div className="absolute inset-0 flex items-center justify-center bg-paper/30">
-              <svg
-                className="h-8 w-8 text-ink/80"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-ink/20 transition-opacity duration-500 group-hover:opacity-0">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-paperDeep/70 backdrop-blur-sm">
+                <svg
+                  className="h-5 w-5 text-ink/90"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
             </div>
           </>
-        )
-      ) : (
-        <img
-          src={media.url}
-          alt={media.alt}
-          loading={featured ? 'eager' : 'lazy'}
-          decoding="async"
-          className="h-full w-full object-contain"
-        />
-      )}
+        ) : (
+          <img
+            src={media.url}
+            alt={media.alt}
+            loading="lazy"
+            decoding="async"
+            className="block w-full h-auto rounded-xl transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+          />
+        )}
+      </div>
     </div>
   )
 }
 
 export default function Gallery({ items }: { items: GalleryItem[] }) {
-  const [featuredId, setFeaturedId] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const photos = useMemo<GalleryMedia[]>(
     () =>
@@ -115,67 +97,30 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
 
   if (sorted.length === 0) return null
 
-  // Determine featured item: user-selected, or first by sort order
-  const featured =
-    sorted.find((m) => m.id === featuredId) || sorted[0]
-
-  // Thumbnails = everything except the featured item
-  const thumbnails = sorted.filter((m) => m.id !== featured.id)
-
-  // Different layouts based on count
-  const hasMultipleRows = thumbnails.length > 3
+  const lightboxItems: LightboxMedia[] = sorted
 
   return (
     <section id="gallery" className="px-6 py-20 sm:py-28">
       <p className="text-center text-xs uppercase tracking-widest2 text-clay">Gallery</p>
 
       <div className="mx-auto mt-8 max-w-4xl">
-        {thumbnails.length === 0 ? (
-          // Single item — just show it large
-          <div className="overflow-hidden bg-paperDeep/50">
-            <div className="aspect-[16/10] sm:aspect-[16/9]">
-              <MediaTile media={featured} featured />
-            </div>
-          </div>
-        ) : (
-          // Bento-style layout
-          <div className="grid gap-2 sm:gap-3 md:grid-cols-6 md:auto-rows-[120px]">
-            {/* Featured item — large, spans 4 cols and 3 rows on desktop */}
-            <div className="col-span-2 aspect-[4/3] md:col-span-4 md:row-span-3 md:aspect-auto">
-              <MediaTile media={featured} featured />
-            </div>
-
-            {/* Right column thumbnails — stack vertically next to featured */}
-            {thumbnails.slice(0, 3).map((media) => (
-              <div
-                key={media.id}
-                className="col-span-1 aspect-square md:col-span-2 md:row-span-1 md:aspect-auto"
-              >
-                <MediaTile
-                  media={media}
-                  selected={media.id === featured.id}
-                  onClick={() => setFeaturedId(media.id)}
-                />
-              </div>
-            ))}
-
-            {/* Bottom row thumbnails — fill remaining space */}
-            {hasMultipleRows &&
-              thumbnails.slice(3, 7).map((media) => (
-                <div
-                  key={media.id}
-                  className="col-span-1 aspect-square md:col-span-2 md:row-span-1 md:aspect-auto"
-                >
-                  <MediaTile
-                    media={media}
-                    selected={media.id === featured.id}
-                    onClick={() => setFeaturedId(media.id)}
-                  />
-                </div>
-              ))}
-          </div>
-        )}
+        <div className="columns-2 gap-3 sm:columns-3 sm:gap-4">
+          {sorted.map((media, i) => (
+            <MediaCard
+              key={media.id}
+              media={media}
+              onClick={() => setLightboxIndex(i)}
+            />
+          ))}
+        </div>
       </div>
+
+      <GalleryLightbox
+        items={lightboxItems}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onNavigate={setLightboxIndex}
+      />
     </section>
   )
 }
