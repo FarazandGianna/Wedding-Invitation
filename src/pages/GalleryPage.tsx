@@ -46,7 +46,7 @@ function MediaCard({
               muted
               playsInline
               preload="metadata"
-              className="block w-full h-auto rounded-xl transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+              className="block w-full h-auto rounded-xl"
             />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-ink/20 transition-opacity duration-500 group-hover:opacity-0">
               <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-paperDeep/70 backdrop-blur-sm">
@@ -66,7 +66,7 @@ function MediaCard({
             alt={media.alt}
             loading="lazy"
             decoding="async"
-            className="block w-full h-auto rounded-xl transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+            className="block w-full h-auto rounded-xl"
           />
         )}
       </div>
@@ -135,15 +135,26 @@ function GalleryContent({
       )}
 
       <div className="mx-auto mt-8 max-w-4xl">
-        <div className="columns-2 gap-3 sm:columns-3 sm:gap-4">
-          {sorted.map((media, i) => (
+        {sorted.length === 1 ? (
+          // Single item: center it instead of left-aligning in a column
+          <div className="mx-auto max-w-md">
             <MediaCard
-              key={media.id}
-              media={media}
-              onClick={() => setLightboxIndex(i)}
+              key={sorted[0].id}
+              media={sorted[0]}
+              onClick={() => setLightboxIndex(0)}
             />
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="columns-2 gap-3 sm:columns-3 sm:gap-4">
+            {sorted.map((media, i) => (
+              <MediaCard
+                key={media.id}
+                media={media}
+                onClick={() => setLightboxIndex(i)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <GalleryLightbox

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export interface LightboxMedia {
   id: string
@@ -22,7 +22,6 @@ interface Props {
 export default function GalleryLightbox({ items, index, onClose, onNavigate }: Props) {
   const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(false)
-  const prevIndexRef = useRef<number | null>(null)
 
   const open = index !== null
 
@@ -38,16 +37,19 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
     }
   }, [open])
 
-  // Escape to close
+  // Keyboard navigation (Escape, ArrowLeft, ArrowRight)
   useEffect(() => {
     if (!mounted) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowLeft' && items.length > 1) {
-        const prev = index! <= 0 ? items.length - 1 : index! - 1
+      // Guard: during the close transition index may be null
+      if (index === null) return
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'ArrowLeft' && items.length > 1) {
+        const prev = index <= 0 ? items.length - 1 : index - 1
         onNavigate(prev)
       } else if (e.key === 'ArrowRight' && items.length > 1) {
-        const next = index! >= items.length - 1 ? 0 : index! + 1
+        const next = index >= items.length - 1 ? 0 : index + 1
         onNavigate(next)
       }
     }
@@ -76,9 +78,6 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
 
   const media = items[index]
   if (!media) return null
-
-  // Detect direction for a subtle slide hint
-  const direction = prevIndexRef.current !== null && index !== prevIndexRef.current
 
   return (
     <div
@@ -143,7 +142,7 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
 
       {/* Media */}
       <div
-        className={`relative px-16 py-8 transition-all duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`relative px-4 py-8 transition-all duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-16 ${
           visible
             ? 'scale-100 opacity-100'
             : 'scale-[0.96] opacity-0'
