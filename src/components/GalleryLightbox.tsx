@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface LightboxMedia {
   id: string
@@ -74,6 +74,49 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
     [onClose]
   )
 
+  // Touch swipe: left/right to navigate, down to close
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't track swipes that start on video controls
+    const target = e.target as HTMLElement
+    if (target.tagName === 'VIDEO' && target.hasAttribute('controls')) return
+    if (target.closest('button')) return
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+  }, [])
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStart.current || index === null) return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - touchStart.current.x
+      const dy = t.clientY - touchStart.current.y
+      touchStart.current = null
+
+      const absX = Math.abs(dx)
+      const absY = Math.abs(dy)
+
+      // Swipe down to close (vertical dominant, downward, sufficient distance)
+      if (absY > absX && dy > 80) {
+        onClose()
+        return
+      }
+
+      // Swipe left/right to navigate (horizontal dominant, sufficient distance)
+      if (absX > absY && absX > 50 && items.length > 1) {
+        if (dx > 0) {
+          // Swipe right = previous
+          onNavigate(index <= 0 ? items.length - 1 : index - 1)
+        } else {
+          // Swipe left = next
+          onNavigate(index >= items.length - 1 ? 0 : index + 1)
+        }
+      }
+    },
+    [index, items.length, onClose, onNavigate]
+  )
+
   if (!mounted || index === null) return null
 
   const media = items[index]
@@ -86,6 +129,8 @@ export default function GalleryLightbox({ items, index, onClose, onNavigate }: P
       aria-modal="true"
       aria-label="Media viewer"
       onClick={handleBackdropClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Backdrop */}
       <div
