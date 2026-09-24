@@ -112,64 +112,166 @@ export default function AdminPage() {
   }} />
 }
 
+interface TabDef {
+  key: Tab
+  label: string
+  hint: string
+}
+
+interface NavGroup {
+  title: string
+  tabs: TabDef[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: 'Guests',
+    tabs: [
+      { key: 'guests', label: 'Guest List', hint: 'RSVPs and attendance' }
+    ]
+  },
+  {
+    title: 'Wedding Info',
+    tabs: [
+      { key: 'details', label: 'Wedding Details', hint: 'Date, time, names, RSVP settings' },
+      { key: 'pages', label: 'Page Text', hint: 'Headings and intro paragraphs' },
+      { key: 'sections', label: 'Sections', hint: 'Show or hide page sections' }
+    ]
+  },
+  {
+    title: 'Guest Pages',
+    tabs: [
+      { key: 'detail-items', label: 'Details Checklist', hint: 'Extra details for the Details page' },
+      { key: 'venue-items', label: 'Venue Info', hint: 'Parking, dress code, accommodation' },
+      { key: 'faq', label: 'FAQ', hint: 'Frequently asked questions' }
+    ]
+  },
+  {
+    title: 'Media & Events',
+    tabs: [
+      { key: 'gallery', label: 'Gallery', hint: 'Photos and videos with titles' },
+      { key: 'events', label: 'Itinerary', hint: 'Event schedule and locations' },
+      { key: 'registry', label: 'Registry', hint: 'Gift registry links' }
+    ]
+  }
+]
+
+const TAB_LABELS: Record<Tab, string> = Object.fromEntries(
+  NAV_GROUPS.flatMap((g) => g.tabs.map((t) => [t.key, t.label]))
+) as Record<Tab, string>
+
+const TAB_HINTS: Record<Tab, string> = Object.fromEntries(
+  NAV_GROUPS.flatMap((g) => g.tabs.map((t) => [t.key, t.hint]))
+) as Record<Tab, string>
+
 function AdminDashboard({ passcode, onSignOut }: { passcode: string; onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>('guests')
   const [slug, setSlug] = useState('sample-wedding')
+  const [navOpen, setNavOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-paper px-4 pb-24 pt-6 sm:px-8">
-      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-widest2 text-clay">Admin</p>
-          <h1 className="font-serif text-2xl text-ink">Wedding Manager</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="text-xs uppercase tracking-widest2 text-clay" htmlFor="admin-slug">
-            Invitation
-          </label>
-          <input
-            id="admin-slug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.trim())}
-            className="min-h-9 w-44 border border-ink/20 bg-transparent px-3 py-2 text-sm text-ink outline-none focus:border-ink/50"
-          />
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="min-h-9 border border-ink/20 px-4 py-2 text-xs uppercase tracking-widest2 text-ink transition-colors hover:bg-ink hover:text-paper"
-          >
-            Sign out
-          </button>
+    <div className="min-h-screen bg-paper">
+      {/* Header */}
+      <header className="sticky top-0 z-30 border-b border-line/30 bg-paper/95 px-4 py-3 backdrop-blur-sm sm:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setNavOpen((v) => !v)}
+              className="flex h-9 w-9 items-center justify-center border border-ink/20 text-ink transition-colors hover:bg-ink hover:text-paper lg:hidden"
+              aria-label="Toggle navigation"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                {navOpen
+                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
+            </button>
+            <div>
+              <p className="text-xs uppercase tracking-widest2 text-clay">Admin</p>
+              <h1 className="font-serif text-xl text-ink sm:text-2xl">Wedding Manager</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <label className="hidden text-xs uppercase tracking-widest2 text-clay sm:inline" htmlFor="admin-slug">
+              Invitation
+            </label>
+            <input
+              id="admin-slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.trim())}
+              className="min-h-9 w-32 border border-ink/20 bg-transparent px-3 py-2 text-sm text-ink outline-none focus:border-ink/50 sm:w-44"
+            />
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="min-h-9 border border-ink/20 px-3 py-2 text-xs uppercase tracking-widest2 text-ink transition-colors hover:bg-ink hover:text-paper sm:px-4"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
-      <nav className="mx-auto mt-6 flex max-w-5xl gap-2 overflow-x-auto border-b border-line/70">
-        {(['guests', 'details', 'sections', 'pages', 'detail-items', 'venue-items', 'faq', 'gallery', 'events', 'registry'] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-xs uppercase tracking-widest2 transition-colors sm:px-4 ${
-              tab === t ? 'border-clay text-ink' : 'border-transparent text-clay hover:text-ink'
-            }`}
-          >
-            {t === 'guests' ? 'Guest list' : t === 'events' ? 'Events' : t === 'registry' ? 'Registry' : t === 'pages' ? 'Pages' : t === 'detail-items' ? 'Detail Items' : t === 'venue-items' ? 'Venue Items' : t === 'faq' ? 'FAQ' : t}
-          </button>
-        ))}
-      </nav>
+      <div className="mx-auto flex max-w-6xl gap-0 lg:gap-6 lg:px-8">
+        {/* Sidebar nav */}
+        <nav
+          className={`${navOpen ? 'block' : 'hidden'} w-full border-b border-line/30 bg-paperDeep/30 px-4 py-4 lg:block lg:w-56 lg:shrink-0 lg:border-b-0 lg:border-r lg:border-line/20 lg:px-0 lg:py-6`}
+        >
+          {NAV_GROUPS.map((group) => (
+            <div key={group.title} className="mb-5 lg:mb-6">
+              <p className="mb-2 px-3 text-[10px] uppercase tracking-widest2 text-clay/60">
+                {group.title}
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {group.tabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => {
+                      setTab(t.key)
+                      setNavOpen(false)
+                    }}
+                    className={`rounded-lg px-3 py-2 text-left transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      tab === t.key
+                        ? 'bg-gold/15 border border-gold/30'
+                        : 'border border-transparent hover:bg-ink/5'
+                    }`}
+                  >
+                    <span className={`block text-sm ${tab === t.key ? 'font-medium text-ink' : 'text-ink/70'}`}>
+                      {t.label}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-clay/70">
+                      {t.hint}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-      <main className="mx-auto mt-8 max-w-5xl">
-        {tab === 'guests' && <GuestsTab passcode={passcode} slug={slug} />}
-        {tab === 'details' && <DetailsTab passcode={passcode} slug={slug} />}
-        {tab === 'sections' && <SectionsTab passcode={passcode} slug={slug} />}
-        {tab === 'pages' && <PagesTab passcode={passcode} slug={slug} />}
-        {tab === 'detail-items' && <PageItemsTab passcode={passcode} slug={slug} pageType="details" title="Detail Items" description="Custom items for the Details page (e.g. Smoking: No smoking, Drinking: No drinking)." />}
-        {tab === 'venue-items' && <PageItemsTab passcode={passcode} slug={slug} pageType="venue" title="Venue Items" description="Custom items for the Venue page (e.g. Parking, Dress code, Accommodation)." />}
-        {tab === 'faq' && <FaqTab passcode={passcode} slug={slug} />}
-        {tab === 'gallery' && <GalleryTab passcode={passcode} slug={slug} />}
-        {tab === 'events' && <EventsTab passcode={passcode} slug={slug} />}
-        {tab === 'registry' && <RegistryTab passcode={passcode} slug={slug} />}
-      </main>
+        {/* Main content */}
+        <main className="flex-1 px-4 py-6 sm:py-8 lg:px-0">
+          {/* Active tab header */}
+          <div className="mb-6">
+            <h2 className="font-serif text-2xl text-ink">{TAB_LABELS[tab]}</h2>
+            <p className="mt-1 text-sm text-clay">{TAB_HINTS[tab]}</p>
+            <div className="mt-3 h-px bg-line/30" />
+          </div>
+
+          {tab === 'guests' && <GuestsTab passcode={passcode} slug={slug} />}
+          {tab === 'details' && <DetailsTab passcode={passcode} slug={slug} />}
+          {tab === 'sections' && <SectionsTab passcode={passcode} slug={slug} />}
+          {tab === 'pages' && <PagesTab passcode={passcode} slug={slug} />}
+          {tab === 'detail-items' && <PageItemsTab passcode={passcode} slug={slug} pageType="details" title="Details Checklist" description="Custom items for the Details page (e.g. Smoking: No smoking, Drinking: No drinking)." />}
+          {tab === 'venue-items' && <PageItemsTab passcode={passcode} slug={slug} pageType="venue" title="Venue Info" description="Custom items for the Venue page (e.g. Parking, Dress code, Accommodation)." />}
+          {tab === 'faq' && <FaqTab passcode={passcode} slug={slug} />}
+          {tab === 'gallery' && <GalleryTab passcode={passcode} slug={slug} />}
+          {tab === 'events' && <EventsTab passcode={passcode} slug={slug} />}
+          {tab === 'registry' && <RegistryTab passcode={passcode} slug={slug} />}
+        </main>
+      </div>
     </div>
   )
 }
